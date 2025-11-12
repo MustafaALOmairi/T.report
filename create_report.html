@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TIME REPORT - Create Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #e9eff4 0%, #d1dbe6 100%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 2px auto;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #1f81eb;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .back-link:hover {
+            color: #1a6dc7;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 10px;
+            border: 1px solid #c0c0c0;
+        }
+
+        th,
+        td {
+            border: 1px solid #c0c0c0;
+            padding: 3px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            padding: 10px 0;
+            background: linear-gradient(to right, #e0e0e2, #f8fafa);
+            color: #333;
+        }
+
+        .yellow {
+            background: linear-gradient(to bottom, #f4b400);
+            color: #333;
+            font-weight: 700;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        select {
+            width: calc(100% - 10px);
+            padding: 10px;
+            margin: 1px 0;
+            border: 0.1px solid #b6b2b2;
+            border-radius: 150px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"] {
+            width: calc(100% - 10px);
+            padding: 10px;
+            margin: 1px 0;
+            border: 0.1px solid #b6b2b2;
+            border-radius: 150px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        textarea {
+            width: calc(100% - 10px);
+            padding: 10px;
+            margin: 1px 0;
+            border: 1px solid #b6b2b2;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            resize: vertical;
+            min-height: 150px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        input[list="berthList"],
+        input[list="yardList"],
+        input[list="whatWeUseList"],
+        input[list="Equipment"],
+        input[list="operator1"],
+        input[list="operator2"] {
+            width: calc(100% - 10px);
+            padding: 10px;
+            margin: 1px 0;
+            border: 0.1px solid #b6b2b2;
+            border-radius: 150px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        /* Delete button styling */
+        .delete-btn {
+            background: linear-gradient(to bottom, #ff5252, #ff5252);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(to bottom, #ff5252, #ff0000);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .delete-btn:active {
+            transform: translateY(0);
+        }
+
+        .add-line-btn {
+            margin: 5px;
+            padding: 10px 18px;
+            background: linear-gradient(to bottom, #52aa67, #52a764);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-line-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .add-line-btn:active {
+            transform: translateY(0);
+        }
+
+        .add-equipment-btn {
+            background: linear-gradient(to bottom, #52aa67);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .save-image-btn {
+            background: linear-gradient(to bottom, #1f81eb, #1e7ee4) !important;
+        }
+
+        .save-pdf-btn {
+            background: linear-gradient(to bottom, #cf3343, #c02d3b) !important;
+        }
+
+        .print-btn {
+            background: linear-gradient(to bottom, #6c757d, #5a6268) !important;
+        }
+
+        .add-buttons-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .add-buttons-container .add-line-btn {
+            margin-left: 10px;
+        }
+
+        .screenshot-guide {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 500px;
+            display: none;
+            border: 1px solid #007bff;
+        }
+
+        .screenshot-guide h3 {
+            margin-top: 0;
+            color: #007bff;
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .screenshot-guide p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .close-guide {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .close-guide:hover {
+            background: #0069d9;
+        }
+
+        .guide-icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        @media print {
+            body {
+                background-color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 0;
+                margin: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+                width: 100%;
+                margin: 0;
+            }
+            .form-header {
+                display: none;
+            }
+
+            button,
+            .add-line-btn,
+            .form-actions {
+                display: none !important;
+            }
+
+            table,
+            th,
+            td {
+                border-color: #000 !important;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+        }
+
+        .screenshot-mode .form-actions,
+        .screenshot-mode .add-member-btn,
+        .screenshot-mode .add-line-btn,
+        .screenshot-mode .form-header {
+            display: none !important;
+        }
+
+        /* Hide delete buttons in screenshot mode */
+        .screenshot-mode .delete-btn,
+        .screenshot-mode .equipment-delete-btn,
+        .screenshot-mode .member-delete-btn {
+            display: none !important;
+        }
+
+        .download-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .option-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .option-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .team-members-table th {
+            background: linear-gradient(to bottom, #ffeb3b, #fbc02d);
+            color: #333;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .team-members-table td {
+            text-align: left;
+            padding: 8px;
+        }
+
+        .team-member-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .team-member-inputs input {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .add-member-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0 12px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background 0.3s;
+            height: 36px;
+            flex-shrink: 0;
+        }
+
+        .add-member-btn:hover {
+            background: #138496;
+        }
+
+        .section-title {
+            text-align: center;
+            font-weight: bold;
+            margin: 20px 0 10px;
+            color: #333;
+            font-size: 18px;
+            padding: 8px;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-radius: 6px;
+        }
+
+        /* START OF MODIFIED STYLES FOR SMALLER DOCKER FIELDS */
+
+        .team-input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Wrapper for each member (input + delete button) */
+        .team-input-group > div {
+            display: flex;
+            align-items: center;
+        }
+
+        .team-input-group input {
+            width: 75px !important;
+            padding: 3px 4px !important;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 12px !important;
+            height: 28px;
+            box-sizing: border-box;
+        }
+
+        /* Style for the new member delete button */
+        .member-delete-btn {
+            background: linear-gradient(to bottom, #ff5252, #ff0000);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 4px;
+            padding: 0;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+        .member-delete-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .add-member-btn {
+            width: 28px;
+            height: 28px;
+            padding: 0 !important;
+            font-size: 16px !important;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* END OF MODIFIED STYLES */
+        
+        @media (max-width: 900px) {
+            #dockerInputs {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            #dockerInputs .add-member-btn {
+                grid-column: span 5;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #dockerInputs {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            #dockerInputs .add-member-btn {
+                grid-column: span 4;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            #dockerInputs {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            #dockerInputs .add-member-btn {
+                grid-column: span 3;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #dockerInputs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            #dockerInputs .add-member-btn {
+                grid-column: span 2;
+            }
+        }
+
+        .horizontal-team-table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+
+        .horizontal-team-table th {
+            background: linear-gradient(to bottom, #f4b400);
+            color: #333;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px;
+            border: 1px solid #c0c0c0;
+        }
+
+        .equipment-section {
+            position: relative;
+        }
+
+        .equipment-add-btn-container {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .form-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .add-line-btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            .delete-btn {
+                padding: 6px 10px;
+                font-size: 10px;
+            }
+
+            .equipment-table td {
+                padding: 2px;
+                font-size: 12px;
+            }
+        }
+
+        /* Equipment table adjustments */
+        .equipment-table th:nth-child(8),
+        .equipment-table td:nth-child(8) {
+            width: 80px;
+        }
+
+        /* Added for equipment delete buttons */
+        .equipment-delete-btn {
+            background: linear-gradient(to bottom, #ff6b6b, #ff5252);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: block;
+            margin: 0 auto;
+            width: 70px;
+        }
+
+        .equipment-delete-btn:hover {
+            background: linear-gradient(to bottom, #ff5252, #ff0000);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Specific style for the "No" input to make it smaller */
+        #timeTable input[name="quantity"] {
+            width: 60px !important;
+            padding: 8px !important;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-header">
+             <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+        <!-- Added ID to the form for JS selection -->
+        <form id="reportForm">
+            <table> <!--table 1-->
+                <tr>
+                    <td colspan="7" class="header">TIME REPORT</td>
+                </tr>
+            </table>
+
+            <table> <!--table 2-->
+                <tr class="yellow">
+                    <th>MV</th>
+                    <th>VOY</th>
+                    <th>Date</th>
+                    <th>Shift</th>
+                </tr>
+                <tr>
+                    <td><input type="text" id="mv" name="mv" required></td>
+                    <td><input type="text" id="voy" name="voy" required></td>
+                    <td><input type="date" id="date" name="date" required></td>
+                    <td>
+                        <select id="shift" name="shift" required>
+                            <option value="Day">Day</option>
+                            <option value="Night">Night</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+
+            <table> <!--table 3-->
+                <tr class="yellow">
+                    <th>Berth</th>
+                    <th>Bollard</th>
+                    <th>Yard No</th>
+                </tr>
+                <tr>
+                    <td>
+                        <input list="berthList" id="berth" name="berth">
+                        <datalist id="berthList">
+                            <option value="110">
+                            <option value="120">
+                            <option value="130">
+                            <option value="140">
+                            <option value="150">
+                            <option value="160">
+                            <option value="170">
+                            <option value="180">
+                            <option value="190">
+                            <option value="FB-200">
+                            <option value="FB-210">
+                            <option value="FB-220">
+                            <option value="ODC">
+                        </datalist>
+                    </td>
+                    <td><input type="text" id="bollard" name="bollard"></td>
+                    <td>
+                        <input list="yardList" id="yardno" name="yardno">
+                        <datalist id="yardList">
+                            <option value="Admin Gate">
+                            <option value="Gate IN">
+                            <option value="Gate OUT">
+                            <option value="Port Security">
+                            <option value="Yard-DB">
+                            <option value="Yard-BB">
+                            <option value="Yard-RORO">
+                            <option value="Yard-CT">
+                            <option value="Yard-CFS">
+                            <option value="Yard-Navy">
+                            <option value="Washing Area">
+                            <option value="Wood yard">
+                            <option value="Warehouse">
+                        </datalist>
+                    </td>
+                </tr>
+            </table>
+
+            <!--table 4-->
+            <table class="compact-table">
+                <tr class="yellow">
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>No</th>
+                    <th>What We Use</th>
+                    <th></th>
+                </tr>
+                <tbody id="timeTable">
+                    <tr>
+                        <td><input type="time" name="start"></td>
+                        <td><input type="time" name="end"></td>
+                        <td><input type="number" name="quantity" min="1" value="1"></td>
+                        <td>
+                            <input list="whatWeUseList" name="what_we_use">
+                            <datalist id="whatWeUseList">
+                                <option value="Foreman">
+                                <option value="Tallyman">
+                                <option value="Docker">
+                                <option value="FL 3T">
+                                <option value="FL 5T">
+                                <option value="FL 11T">
+                                <option value="FL 16T">
+                                <option value="FL 25T">
+                                <option value="RS">
+                                <option value="TT">
+                                <option value="WL">
+                                <option value="Mooring">
+                                <option value="UnMooring">
+                                <option value="Gangway">
+                                <option value="Force Protection Wall">
+                                <option value="Fender">
+                                <option value="Browstand">
+                                <option value="Lighting Generator">
+                                <option value="Cement Block">
+                                <option value="Generator">
+                                <option value="SC">
+                                <option value="STS">
+                                <option value="RTG">
+                                <option value="Crane">
+                                <option value="HMC">
+                                <option value="ML">
+                                <option value="BC">
+                                <option value="VC">
+                                <option value="AR">
+                                <option value="Brrier">
+                                <option value="Fire Truck">
+                                <option value="Container">
+                            </datalist>
+                        </td>
+                        
+                        <td><button type="button" class="delete-btn" onclick="deleteTimeRow(this)">Delete</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button type="button" class="add-line-btn" onclick="addTimeRow()">+ Add Line</button>
+
+            <!--table 5-->
+            <table>
+                <tr class="yellow">
+                    <th> What We Do</th>
+                </tr>
+                <tr>
+                    <td>
+                        <textarea id="activityTextarea" name="what_we_do" placeholder="Describe activities..."></textarea>
+                    </td>
+                </tr>
+            </table>
+            <!--table 6-->
+            <table class="horizontal-team-table">
+                <thead>
+                    <tr>
+                        <th>FOREMAN</th>
+                        <th>TALLYMAN</th>
+                        <th>DOCKER</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="team-input-group" id="foremanInputs">
+                                <div>
+                                    <input list="foremanList" name="foreman" placeholder="ID">
+                                    <button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>
+                                </div>
+                                <button type="button" class="add-member-btn"
+                                    onclick="addTeamMember('foreman')">+</button>
+                            </div>
+                            <datalist id="foremanList">
+                                <option value="69">
+                                <option value="78">
+                                <option value="110">
+                                <option value="275">
+                                <option value="AS-0001">
+                                <option value="AS-0002">
+                                <option value="AS-0003">
+                                <option value="AS-0004">
+                                <option value="AS-0005">
+                                <option value="AS-0006">
+                                <option value="AS-0007">
+                                <option value="AS-0008">
+                            </datalist>
+                        </td>
+                        <td>
+                            <div class="team-input-group" id="tallymanInputs">
+                                <div>
+                                    <input list="tallymanList" name="tallyman" placeholder="ID">
+                                    <button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>
+                                </div>
+                                <button type="button" class="add-member-btn"
+                                    onclick="addTeamMember('tallyman')">+</button>
+                            </div>
+                            <datalist id="tallymanList">
+                                <option value="178">
+                                <option value="241">
+                                <option value="AS-0009">
+                                <option value="AS-0010">
+                                <option value="AS-0011">
+                                <option value="AS-0012">
+                                <option value="AS-0013">
+                                <option value="AS-0014">
+                                <option value="AS-0015">
+                                <option value="AS-0016">
+                                <option value="AS-0017">
+                                <option value="AS-0018">
+                                <option value="AS-0019">
+                                <option value="AS-0020">
+                            </datalist>
+                        </td>
+                        <td>
+                            <div class="team-input-group" id="dockerInputs">
+                                <div>
+                                    <input list="dockerList" name="docker" placeholder="ID">
+                                    <button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>
+                                </div>
+                                <div>
+                                    <input list="dockerList" name="docker" placeholder="ID">
+                                    <button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>
+                                </div>
+                                <button type="button" class="add-member-btn"
+                                    onclick="addTeamMember('docker')">+</button>
+                            </div>
+                            <datalist id="dockerList">
+                                <option value="AS-0064">
+                                <option value="AS-0065">
+                                <option value="AS-0066">
+                                <option value="AS-0067">
+                                <option value="AS-0068">
+                                <option value="AS-0069">
+                                <option value="AS-0070">
+                                <option value="AS-0071">
+                                <option value="AS-0072">
+                                <option value="AS-0073">
+                                <option value="AS-0074">
+                                <option value="AS-0075">
+                                <option value="AS-0076">
+                                <option value="AS-0077">
+                                <option value="AS-0078">
+                                <option value="AS-0079">
+                                <option value="AS-0080">
+                                <option value="AS-0081">
+                                <option value="AS-0082">
+                                <option value="AS-0083">
+                                <option value="AS-0084">
+                                <option value="AS-0085">
+                                <option value="AS-0086">
+                                <option value="AS-0087">
+                                <option value="AS-0088">
+                                <option value="AS-0089">
+                                <option value="AS-0090">
+                                <option value="AS-0091">
+                                <option value="AS-0092">
+                                <option value="AS-0093">
+                                <option value="AS-0094">
+                                <option value="AS-0095">
+                                <option value="AS-0096">
+                                <option value="AS-0097">
+                                <option value="AS-0098">
+                                <option value="AS-0099">
+                                <option value="AS-0100">
+                                <option value="AS-0101">
+                                <option value="AS-0102">
+                                <option value="AS-0103">
+                                <option value="AS-0104">
+                                <option value="AS-0105">
+                                <option value="AS-0106">
+                                <option value="AS-0107">
+                                <option value="AS-0108">
+                                <option value="AS-0109">
+                                <option value="AS-0110">
+                                <option value="AS-0111">
+                                <option value="AS-0112">
+                                <option value="AS-0113">
+                                <option value="AS-0114">
+                                <option value="AS-0115">
+                                <option value="AS-0124">
+                                <option value="AS-0125">
+                            </datalist>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="equipment-section">
+                <table id="equipmentTable" class="equipment-table">
+                    <thead>
+                        <tr class="yellow">
+                            <th>Equipment</th>
+                            <th>Operator 1</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <input list="Equipment" name="Equipment">
+                                <datalist id="Equipment">
+                                    <option value="FL 3T">
+                                    <option value="FL 5T">
+                                    <option value="FL 11T">
+                                    <option value="FL 16T">
+                                    <option value="FL 25T">
+                                    <option value="RS">
+                                    <option value="TT">
+                                    <option value="WL">
+                                    <option value="SC">
+                                    <option value="STS">
+                                    <option value="RTG">
+                                    <option value="Crane">
+                                    <option value="HMC">
+                                    <option value="ML">
+                                    <option value="BC">
+                                    <option value="VC">
+                                </datalist>
+                            </td>
+                            <td>
+                                <input list="operator1" name="operator1">
+                                <datalist id="operator1">
+                                    <option value="AS-0035">
+                                    <option value="AS-0036">
+                                    <option value="AS-0037">
+                                    <option value="AS-0038">
+                                    <option value="AS-0039">
+                                    <option value="AS-0040">
+                                    <option value="AS-0041">
+                                    <option value="AS-0042">
+                                    <option value="AS-0043">
+                                    <option value="AS-0044">
+                                    <option value="AS-0045">
+                                    <option value="AS-0046">
+                                </datalist>
+                            </td>
+                            <td><input type="time" name="start1"></td>
+                            <td><input type="time" name="end1"></td>
+
+                            <td>
+                                <button type="button" class="equipment-delete-btn"
+                                    onclick="deleteEquipmentRow(this)">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="add-line-btn add-equipment-btn" onclick="addEquipmentRow()">+ Add
+                    Line</button>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="add-line-btn" id="saveReportBtn">Save Report</button>
+                <button type="button" class="add-line-btn save-image-btn" id="saveImageBtn">Save as
+                    Image</button>
+                <button type="button" class="add-line-btn save-pdf-btn" id="savePdfBtn">Save as PDF</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="screenshotGuide" class="screenshot-guide">
+        <div class="guide-icon">📷</div>
+        <h3>Screenshot Guide</h3>
+        <p>Your report will be captured as an image. Make sure all information is entered correctly before saving.</p>
+        <button class="close-guide" onclick="document.getElementById('screenshotGuide').style.display='none'">Got
+            it!</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('reportForm');
+            const saveBtn = document.getElementById('saveReportBtn');
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('editId');
+
+            if (editId) {
+                loadReportForEditing(editId);
+                saveBtn.textContent = 'Update Report';
+            }
+
+            form.addEventListener('submit', function(event) {
+                event.preventDefault(); // Stop normal form submission
+                saveOrUpdateReport(editId);
+            });
+        });
+
+        function saveOrUpdateReport(editId) {
+            const reportData = collectFormData();
+            
+            if (!reportData) return; // Validation failed
+
+            let reports = JSON.parse(localStorage.getItem('timeReports')) || [];
+
+            if (editId) {
+                // Update existing report
+                const index = reports.findIndex(r => r.id === editId);
+                if (index !== -1) {
+                    reports[index] = { ...reportData, id: editId };
+                }
+                alert('Report updated successfully!');
+            } else {
+                // Save new report
+                reportData.id = 'report_' + Date.now(); // Create a unique ID
+                reports.push(reportData);
+                alert('Report saved successfully!');
+            }
+            
+            console.log("Saving reports to storage:", reports); // Debugging
+            localStorage.setItem('timeReports', JSON.stringify(reports));
+            
+            // Redirect to search page after saving
+            window.location.href = 'search_reports.html';
+        }
+
+        function loadReportForEditing(reportId) {
+            const reports = JSON.parse(localStorage.getItem('timeReports')) || [];
+            const report = reports.find(r => r.id === reportId);
+            
+            if (!report) {
+                alert('Report not found!');
+                window.location.href = 'search_reports.html';
+                return;
+            }
+
+            console.log("Loading report for editing:", report); // Debugging
+
+            // Populate main fields
+            document.getElementById('mv').value = report.mv || '';
+            document.getElementById('voy').value = report.voy || '';
+            document.getElementById('date').value = report.date || '';
+            document.getElementById('shift').value = report.shift || '';
+            document.getElementById('berth').value = report.berth || '';
+            document.getElementById('bollard').value = report.bollard || '';
+            document.getElementById('yardno').value = report.yardno || '';
+            document.getElementById('activityTextarea').value = report.what_we_do || '';
+
+            // Populate dynamic tables
+            populateTimeTable(report.timeRecords || []);
+            populateTeamMembers('foreman', report.team ? report.team.foreman || [] : []);
+            populateTeamMembers('tallyman', report.team ? report.team.tallyman || [] : []);
+            populateTeamMembers('docker', report.team ? report.team.docker || [] : []);
+            populateEquipmentTable(report.equipmentRecords || []);
+        }
+        
+        function populateTimeTable(records) {
+            const tableBody = document.getElementById('timeTable');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            if (records.length === 0) {
+                // Add one empty row if no data
+                addTimeRow();
+            } else {
+                records.forEach(record => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td><input type="time" name="start" value="${record.start || ''}"></td>
+                        <td><input type="time" name="end" value="${record.end || ''}"></td>
+                        <td><input type="number" name="quantity" min="1" value="${record.quantity || 1}"></td>
+                        <td>
+                            <input list="whatWeUseList" name="what_we_use" value="${record.what_we_use || ''}">
+                        </td>
+                        <td><button type="button" class="delete-btn" onclick="deleteTimeRow(this)">Delete</button></td>
+                    `;
+                });
+            }
+        }
+
+        function populateEquipmentTable(records) {
+            const tableBody = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            if (records.length === 0) {
+                // Add one empty row if no data
+                addEquipmentRow();
+            } else {
+                records.forEach(record => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td><input list="Equipment" name="Equipment" value="${record.Equipment || ''}"></td>
+                        <td><input list="operator1" name="operator1" value="${record.operator1 || ''}"></td>
+                        <td><input type="time" name="start1" value="${record.start1 || ''}"></td>
+                        <td><input type="time" name="end1" value="${record.end1 || ''}"></td>
+                        <td><button type="button" class="equipment-delete-btn" onclick="deleteEquipmentRow(this)">Delete</button></td>
+                    `;
+                });
+            }
+        }
+        
+        function populateTeamMembers(type, members) {
+            const container = document.getElementById(`${type}Inputs`);
+            const addButton = container.lastElementChild; // The '+' button
+            
+            // Clear all existing member divs
+            container.querySelectorAll('div').forEach(div => div.remove());
+
+            if (members.length === 0) {
+                // Add one empty input if no data
+                const memberDiv = document.createElement("div");
+                memberDiv.innerHTML = `<input list="${type}List" name="${type}" placeholder="ID"><button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>`;
+                container.insertBefore(memberDiv, addButton);
+            } else {
+                members.forEach(member => {
+                    const memberDiv = document.createElement("div");
+                    memberDiv.innerHTML = `<input list="${type}List" name="${type}" value="${member}"><button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>`;
+                    container.insertBefore(memberDiv, addButton);
+                });
+            }
+        }
+
+
+        function collectFormData() {
+            // Basic validation
+            if (!document.getElementById('mv').value || !document.getElementById('voy').value) {
+                alert('MV and VOY are required.');
+                return null;
+            }
+
+            const team = {
+                foreman: getTeamMemberValues('foremanInputs'),
+                tallyman: getTeamMemberValues('tallymanInputs'),
+                docker: getTeamMemberValues('dockerInputs')
+            };
+            
+            const timeRecords = [];
+            const timeRows = document.querySelectorAll('#timeTable tr');
+            timeRows.forEach(row => {
+                timeRecords.push({
+                    start: row.querySelector('input[name="start"]').value,
+                    end: row.querySelector('input[name="end"]').value,
+                    quantity: row.querySelector('input[name="quantity"]').value,
+                    what_we_use: row.querySelector('input[name="what_we_use"]').value
+                });
+            });
+
+            const equipmentRecords = [];
+            const equipmentRows = document.querySelectorAll('#equipmentTable tbody tr');
+            equipmentRows.forEach(row => {
+                equipmentRecords.push({
+                    Equipment: row.querySelector('input[name="Equipment"]').value,
+                    operator1: row.querySelector('input[name="operator1"]').value,
+                    start1: row.querySelector('input[name="start1"]').value,
+                    end1: row.querySelector('input[name="end1"]').value
+                });
+            });
+
+            const reportData = {
+                mv: document.getElementById('mv').value,
+                voy: document.getElementById('voy').value,
+                date: document.getElementById('date').value,
+                shift: document.getElementById('shift').value,
+                berth: document.getElementById('berth').value,
+                bollard: document.getElementById('bollard').value,
+                yardno: document.getElementById('yardno').value,
+                what_we_do: document.getElementById('activityTextarea').value,
+                team: team,
+                timeRecords: timeRecords,
+                equipmentRecords: equipmentRecords,
+            };
+
+            console.log("Collected form data:", reportData); // Debugging
+            return reportData;
+        }
+
+        function getTeamMemberValues(containerId) {
+            const inputs = document.querySelectorAll(`#${containerId} input[name]`);
+            return Array.from(inputs).map(input => input.value).filter(val => val !== '');
+        }
+
+        // --- KEEP ALL EXISTING FUNCTIONS BELOW ---
+        // Function to add new equipment row with delete button
+        function addEquipmentRow() {
+            const table = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+
+            newRow.innerHTML = `
+                <td>
+                    <input list="Equipment" name="Equipment">
+                </td>
+                <td>
+                    <input list="operator1" name="operator1">
+                </td>
+                <td><input type="time" name="start1"></td>
+                <td><input type="time" name="end1"></td>
+                <td>
+                    <button type="button" class="equipment-delete-btn" onclick="deleteEquipmentRow(this)">Delete</button>
+                </td>
+            `;
+        }
+
+        // Function to delete equipment row
+        function deleteEquipmentRow(button) {
+            const row = button.parentNode.parentNode;
+            const table = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
+
+            // Only delete if there's more than one row
+            if (table.rows.length > 1) {
+                row.remove();
+            } else {
+                alert("You need at least one equipment entry!");
+            }
+        }
+
+        // Function to add new time row
+        function addTimeRow() {
+            const table = document.getElementById("timeTable");
+            const row = table.insertRow();
+            row.innerHTML = `
+                <td><input type="time" name="start"></td>
+                <td><input type="time" name="end"></td>
+                <td><input type="number" name="quantity" min="1" value="1"></td>
+                <td>
+                    <input list="whatWeUseList" name="what_we_use">
+                </td>
+                <td><button type="button" class="delete-btn" onclick="deleteTimeRow(this)">Delete</button></td>
+            `;
+        }
+
+        // Function to delete time row
+        function deleteTimeRow(button) {
+            const row = button.parentNode.parentNode;
+            const table = document.getElementById("timeTable");
+
+            // Only delete if there's more than one row
+            if (table.rows.length > 1) {
+                row.remove();
+            } else {
+                alert("You need at least one time entry!");
+            }
+        }
+
+        // UPDATED Function to add a new team member
+        function addTeamMember(teamType) {
+            const container = document.getElementById(`${teamType}Inputs`);
+            
+            // Create a wrapper div for the input and delete button
+            const memberDiv = document.createElement("div");
+            
+            const input = document.createElement("input");
+            input.setAttribute("list", `${teamType}List`);
+            input.setAttribute("name", `${teamType}`);
+            input.setAttribute("placeholder", "ID");
+            input.style.width = "75px";
+            input.style.padding = "3px 4px";
+            input.style.fontSize = "12px";
+            input.style.height = "28px";
+            input.style.boxSizing = "border-box";
+            
+            const deleteBtn = document.createElement("button");
+            deleteBtn.setAttribute("type", "button");
+            deleteBtn.className = "member-delete-btn";
+            deleteBtn.setAttribute("onclick", "removeTeamMember(this)");
+            deleteBtn.innerHTML = "&times;"; // Use HTML entity for '×'
+
+            memberDiv.appendChild(input);
+            memberDiv.appendChild(deleteBtn);
+            
+            // Insert the new member div before the add button
+            container.insertBefore(memberDiv, container.lastElementChild);
+            
+            // Focus on the new input field
+            input.focus();
+        }
+
+        // NEW Function to remove a team member
+        function removeTeamMember(button) {
+            const memberDiv = button.parentNode;
+            const container = memberDiv.parentNode;
+            
+            // Check if there is more than one input field before deleting
+            if (container.querySelectorAll('input').length > 1) {
+                memberDiv.remove();
+            } else {
+                alert("You must keep at least one member!");
+            }
+        }
+
+        // Function to save the form as an image
+        document.getElementById('saveImageBtn').addEventListener('click', function () {
+            // Add screenshot mode class to hide buttons
+            document.querySelector('.container').classList.add('screenshot-mode');
+
+            // Show the screenshot guide
+            document.getElementById('screenshotGuide').style.display = 'block';
+
+            html2canvas(document.querySelector('.container'), {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const imageData = canvas.toDataURL('image/png');
+
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.download = 'time_report_' + new Date().toISOString().slice(0, 10) + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Remove screenshot mode class
+                setTimeout(() => {
+                    document.querySelector('.container').classList.remove('screenshot-mode');
+                    document.getElementById('screenshotGuide').style.display = 'none';
+                }, 1000);
+            });
+        });
+
+        // Function to save the form as a PDF
+        document.getElementById('savePdfBtn').addEventListener('click', function () {
+            // Add screenshot mode class to hide buttons
+            document.querySelector('.container').classList.add('screenshot-mode');
+
+            // Show the screenshot guide
+            document.getElementById('screenshotGuide').style.display = 'block';
+
+            html2canvas(document.querySelector('.container'), {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF('p', 'pt', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgWidth = imgProps.width;
+                const imgHeight = imgProps.height;
+
+                const ratio = pageWidth / imgWidth;
+                const scaledHeight = imgHeight * ratio;
+
+                let position = 0;
+                let page = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
+                position -= pageHeight;
+
+                while (position > -scaledHeight) {
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
+                    position -= pageHeight;
+                }
+
+                pdf.save('time_report_' + new Date().toISOString().slice(0, 10) + '.pdf');
+
+                // Remove screenshot mode class
+                setTimeout(() => {
+                    document.querySelector('.container').classList.remove('screenshot-mode');
+                    document.getElementById('screenshotGuide').style.display = 'none';
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+
+</html>
