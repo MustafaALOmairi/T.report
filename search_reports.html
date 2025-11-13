@@ -8,18 +8,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- NEW: Link to the database file -->
     <script src="database.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
-            print-color-adjust: exact;
             padding: 20px;
-            background: #fff;
+            background: linear-gradient(135deg, #e9eff4 0%, #d1dbe6 100%);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
+            min-height: 100vh;
         }
 
         .container {
@@ -100,7 +99,7 @@
         .export-btn:active {
             transform: translateY(0);
         }
-
+        
         .toggle-filters-btn {
             padding: 10px 15px;
             background: #6c757d;
@@ -218,19 +217,8 @@
         .pams-done-btn:hover {
             background-color: #218838;
         }
-
-        .pams-checkbox {
-            transform: scale(1.2);
-            cursor: pointer;
-            vertical-align: middle;
-        }
-        .pams-label {
-            cursor: pointer;
-            vertical-align: middle;
-            margin-left: 5px;
-        }
         
-        /* MODAL STYLES - ENHANCED AND SIMPLIFIED */
+        /* MODAL STYLES - RENAMED AND SIMPLIFIED */
         .modal {
             display: none; 
             position: fixed; 
@@ -307,6 +295,7 @@
             background: linear-gradient(to right, #e0e0e2, #f8fafa);
             color: #333;
         }
+
         .modal-form .yellow {
             background: linear-gradient(to bottom, #f4b400);
             color: #333;
@@ -338,7 +327,7 @@
             min-height: 100px;
             font-family: 'Roboto', sans-serif;
         }
-        
+
         .modal-form .form-actions {
             display: flex;
             justify-content: center;
@@ -367,26 +356,33 @@
             background: linear-gradient(to bottom, #cf3343, #c02d3b) !important;
         }
 
-        .download-options {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            justify-content: center;
+        /* Action Dropdown Styles */
+        .action-dropdown {
+            position: relative;
+            display: inline-block;
         }
 
-        .option-btn {
-            padding: 8px 15px;
-            border-radius: 5px;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 500;
+        .action-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 150px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            border-radius: 4px;
+            text-align: left;
         }
 
-        .option-btn:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
+        .action-dropdown-content a {
+            display: block;
+            padding: 10px;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .action-dropdown-content a:hover {
+            background-color: #f0f0f0;
         }
     </style>
 </head>
@@ -398,15 +394,15 @@
                 <h1>Advanced Search</h1>
                 <p class="subtitle">Find specific time reports with detailed filters</p>
             </div>
-            <a href="index.html" class="back-link">
+            <a href="index.html" class="open-in-new-tab" style="text-decoration: none; color: #1f81eb; font-weight: bold; display: flex; align-items: center; gap: 5px;">
                 <i class="fas fa-arrow-left"></i>
                 Back to Home
             </a>
         </div>
+        </div>
 
         <div class="search-controls">
             <input type="text" id="mainSearchInput" class="search-input" placeholder="Search by Vessel, Voyage, etc.">
-            <!-- NEW EXPORT DATA BUTTON -->
             <button class="export-btn" id="exportDataBtn" title="Copy all reports data to clipboard for GitHub update">
                 <i class="fas fa-download"></i> Export Data
             </button>
@@ -467,7 +463,7 @@
                     <th>Berth</th>
                     <th>Yard</th>
                     <th>PAMS Done</th>
-                    <th>Actions</th>
+                    <th>ACTION</th>
                 </tr>
             </thead>
             <tbody id="reportsTableBody">
@@ -486,9 +482,9 @@
             <div class="modal-body" id="modalBodyContent">
                 <!-- Content will be dynamically inserted here -->
             </div>
-            <div class="download-options">
-                <button class="option-btn" id="downloadPdfBtn" title="Save this report as PDF">Save as PDF</button>
-                <button class="option-btn" id="downloadImageBtn" title="Save this report as Image">Save as Image</button>
+            <div class="modal-footer">
+                <button type="button" class="add-line-btn save-image-btn" id="modalSaveImageBtn">Save as Image</button>
+                <button type="button" class="add-line-btn save-pdf-btn" id="modalSavePdfBtn">Save as PDF</button>
             </div>
         </div>
     </div>
@@ -502,17 +498,10 @@
             document.getElementById('mainSearchInput').addEventListener('input', applyFilters);
             document.getElementById('startDate').addEventListener('change', applyFilters);
             document.getElementById('endDate').addEventListener('change', applyFilters);
-            document.getElementById('yardFilter').addEventListener('change', applyFilters);
+            document.getElementById('yardFilter').addEventListener('openActionDropdown(this)">Open</button>
             document.getElementById('berthFilter').addEventListener('change', applyFilters);
             // Event listener for PAMS filter
             document.getElementById('pamsStatusFilter').addEventListener('change', applyFilters);
-
-            // NEW: Add event listener for export button
-            document.getElementById('exportDataBtn').addEventListener('click', exportDataToClipboard);
-
-            // NEW: Add event listeners for modal download buttons
-            document.getElementById('downloadPdfBtn').addEventListener('click', () => openPdfModal());
-            document.getElementById('downloadImageBtn').addEventListener('click', () => openImageModal());
         });
 
         function loadReportsFromStorage() {
@@ -526,12 +515,12 @@
                 // Fallback to old localStorage method
                 allReports = JSON.parse(localStorage.getItem('timeReports')) || [];
                 console.log("Loaded reports from localStorage fallback:", allReports);
-                applyFilters();
+                applyFilters(); // Initial render
             });
         }
 
         function applyFilters() {
-            const searchTerm = document.getElementById('mainSearchInput').value.toLowerCase();
+            const searchTerm = document.getElementById('mainSearch').value.toLowerCase();
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             const yardFilter = document.getElementById('yardFilter').value;
@@ -553,7 +542,7 @@
                 const matchesYard = !yardFilter || report.yardno === yardFilter;
                 const matchesBerth = !berthFilter || report.berth === berthFilter;
 
-                // --- PAMS Status Filter (NEW LOGIC) ---
+                // --- PAMS Status Filter ---
                 let matchesPamsStatus = true;
                 if (pamsStatusFilter === 'done') {
                     matchesPamsStatus = report.pamsDone === true;
@@ -572,7 +561,7 @@
             tableBody.innerHTML = ''; // Clear existing rows
 
             if (reports.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No reports found matching your criteria.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;">No reports found matching your criteria.</td></tr>';
                 return;
             }
 
@@ -590,16 +579,26 @@
                     <td>${report.yardno}</td>
                     <td style="color: ${pamsStatusColor}; font-weight: bold; text-align: center;">${pamsStatusText}</td>
                     <td class="actions-cell">
-                        <button class="action-btn view-btn" onclick="viewReportModal('${report.id}')">View</button>
-                        <a href="create_report.html?editId=${report.id}" class="action-btn edit-btn">Edit</a>
-                        <button class="action-btn delete-btn" onclick="deleteReport('${report.id}')">Delete</button>
-                        ${!report.pamsDone ? `<button class="action-btn pams-done-btn" onclick="markPamsDone('${report.id}')">PAMS Done</button>` : ''}
+                        <!-- ACTION DROPDOWN -->
+                        <div class="action-dropdown">
+                            <button type="button" class="action-btn view-btn" onclick="viewReportModal('${report.id}')">View</button>
+                            <button type="button" class="action-btn edit-btn" onclick="openEditModal('${report.id}')">Edit</a>
+                            <button type="button" class="action-btn delete-btn" onclick="deleteReport('${report.id}')">Delete</button>
+                            <button type="button" class="action-btn pams-done-btn" onclick="markPamsDone('${report.id}')">PAMS Done</button>
+                            <button type="button" class="action-btn action-dropdown-btn" onclick="openActionDropdown(this)">▼</button>
+                            <div class="action-dropdown-content">
+                                <a href="#" onclick="viewReportModal('${report.id}')">View</a>
+                                <a href="create_report.html?editId=${report.id}" class="action-btn edit-btn">Edit</a>
+                                <a href="#" onclick="deleteReport('${report.id}')" class="action-btn delete-btn">Delete</a>
+                                <a href="#" onclick="markPamsDone('${report.id}')" class="action-btn pams-done-btn">PAMS Done</a>
+                            </div>
+                        </div>
+                        </div>
                     </td>
                 `;
             });
         }
 
-        // NEW: View Report Modal Function
         function viewReportModal(reportId) {
             const report = allReports.find(r => r.id === reportId);
             
@@ -614,7 +613,7 @@
             modalBody.innerHTML = `
                 <p><strong>Vessel:</strong> ${report.mv}</p>
                 <p><strong>Voyage:</strong> ${report.voy}</p>
-                <p><strong>Date:</strong> ${report.date}</p>
+                <p><strong>Date:</strong> <strong>${report.date}</p>
                 <p><strong>Shift:</strong> ${report.shift}</p>
                 <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
                 <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
@@ -650,13 +649,32 @@
                 const reportIndex = allReports.findIndex(r => r.id === reportId);
                 if (reportIndex !== -1) {
                     allReports[reportIndex].pamsDone = true;
-                    saveOrUpdateReport(allReports[reportIndex]).then(() => {
-                        applyFilters(); // Re-render the table
-                    }).catch(error => {
-                        console.error("Failed to update report:", error);
-                        alert('An error occurred while updating the report.');
-                    });
+                    localStorage.setItem('timeReports', JSON.stringify(allReports));
+                    applyFilters(); // Re-render the table
                 }
+            }
+        }
+
+        function openActionDropdown(button) {
+            const dropdown = button.nextElementSibling;
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+                button.innerHTML = '▼';
+            } else {
+                dropdown.style.display = 'block';
+                button.innerHTML = '▼';
+            }
+        }
+
+        function deleteReport(reportId) {
+            if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                // Use the new database function
+                deleteReport(reportId).then(() => {
+                    applyFilters(); // Refresh table with the new list
+                }).catch(error => {
+                    console.error("Failed to delete report:", error);
+                    alert('An error occurred while deleting the report.');
+                });
             }
         }
 
@@ -671,135 +689,6 @@
                 filtersSection.style.display = 'none';
                 button.innerHTML = '<i class="fas fa-filter"></i> Show Filters';
             }
-        }
-        
-        // Modal Close Logic
-        window.onclick = function(event) {
-            const modal = document.getElementById('viewModal');
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-
-        // NEW: Function to open modal for saving as PDF
-        function openPdfModal(reportId) {
-            const report = allReports.find(r => r.id === reportId);
-            if (!report) {
-                alert('Report not found!');
-                return;
-            }
-            const modalBody = document.getElementById('modalBodyContent');
-            
-            // Populate modal with read-only data
-            modalBody.innerHTML = `
-                <p><strong>Vessel:</strong> ${report.mv}</p>
-                <p><strong>Voyage:</strong> ${report.voy}</p>
-                <p><strong>Date:</strong> ${report.date}</p>
-                <p><strong>Shift:</strong> ${report.shift}</p>
-                <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
-                <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
-                <hr>
-                <h4>Team:</h4>
-                <p><strong>Foreman:</strong> ${report.team ? report.team.foreman.join(', ') : 'N/A'}</p>
-                <p><strong>Tallyman:</strong> ${report.team ? report.team.tallyman.join(', ') : 'N/A'}</p>
-                <p><strong>Docker:</strong> ${report.team ? report.team.docker.join(', ') : 'N/A'}</p>
-            `;
-            
-            document.getElementById('viewModal').style.display = "block";
-            document.getElementById('downloadPdfBtn').onclick = () => savePdfFromModal(report);
-        }
-
-        // NEW: Function to open modal for saving as Image
-        function openImageModal(reportId) {
-            const report = allReports.find(r => r.id === reportId);
-            if (!report) {
-                alert('Report not found!');
-                return;
-            }
-            const modalBody = document.getElementById('modalBodyContent');
-            
-            // Populate modal with read-only data
-            modalBody.innerHTML = `
-                <p><strong>Vessel:</strong> ${report.mv}</p>
-                <p><strong>Voyage:</strong> ${report.voy}</p>
-                <p><strong>Date:</strong> ${report.date}</p>
-                <p><strong>Shift:</strong> ${report.shift}</p>
-                <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
-                <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
-                <hr>
-                <h4>Team:</h4>
-                <p><strong>Foreman:</strong> ${report.team ? report.team.foreman.join(', ') : 'N/A'}</p>
-                <p><strong>Tallyman:</strong> ${report.team ? report.team.tallyman.join(', ') : 'N/A'}</p>
-                <p><strong>Docker:</strong> ${report.team ? report.team.docker.join(', ') : 'N/A'}</p>
-            `;
-            
-            document.getElementById('viewModal').style.display = "block";
-            document.getElementById('downloadImageBtn').onclick = () => saveImageFromModal(report);
-        }
-
-        // NEW: Function to save PDF from modal content
-        function savePdfFromModal(report) {
-            const modalContent = document.getElementById('modalContent');
-            
-            html2canvas(modalContent, {
-                scale: 2,
-                useCORS: true,
-                logging: false
-            }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jspdf.jsPDF('p', 'pt', 'a4');
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                const imgProps = pdf.getImageProperties(imgData);
-                const imgWidth = imgProps.width;
-                const imgHeight = imgProps.height;
-                const ratio = pageWidth / imgWidth;
-                const scaledHeight = imgHeight * ratio;
-
-                let position = 0;
-                pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
-                position -= pageHeight;
-
-                while (position > -scaledHeight) {
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
-                    position -= pageHeight;
-                }
-
-                pdf.save('time_report_' + new Date().toISOString().slice(0, 10) + '.pdf');
-
-                // Remove screenshot mode class
-                setTimeout(() => {
-                    document.querySelector('.container').classList.remove('screenshot-mode');
-                    document.getElementById('viewModal').style.display = 'none';
-                }, 1000);
-            });
-        }
-
-        // NEW: Function to save Image from modal content
-        function saveImageFromModal(report) {
-            const modalContent = document.getElementById('modalContent');
-            
-            html2canvas(modalContent, {
-                scale: 2,
-                useCORS: true,
-                logging: false
-            }).then(canvas => {
-                const imageData = canvas.toDataURL('image/png');
-
-                const link = document.createElement('a');
-                link.href = imageData;
-                link.download = 'time_report_' + report.date + '.png';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                // Remove screenshot mode class
-                setTimeout(() => {
-                    document.querySelector('.container').classList.remove('screenshot-mode');
-                    document.getElementById('viewModal').style.display = 'none';
-                }, 1000);
-            });
         }
         
         // Modal Close Logic
