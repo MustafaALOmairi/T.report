@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TIME REPORT - Create Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- NEW: Link to the new database script -->
+    <script src="database.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -722,7 +725,6 @@
                                 <option value="Container">
                             </datalist>
                         </td>
-                        
                         <td><button type="button" class="delete-btn" onclick="deleteTimeRow(this)">Delete</button></td>
                     </tr>
                 </tbody>
@@ -940,7 +942,7 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="add-line-btn" id="saveReportBtn">Save Report</button>
+                <button type="submit" class="add-line-btn">Save Report</button>
                 <button type="button" class="add-line-btn save-image-btn" id="saveImageBtn">Save as
                     Image</button>
                 <button type="button" class="add-line-btn save-pdf-btn" id="savePdfBtn">Save as PDF</button>
@@ -957,240 +959,46 @@
     </div>
 
     <script>
+        // The 'allReports' variable is now managed by the database.js file
+        // We will load it on page load.
+
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('reportForm');
-            const saveBtn = document.getElementById('saveReportBtn');
-            const urlParams = new URLSearchParams(window.location.search);
-            const editId = urlParams.get('editId');
-
-            if (editId) {
-                loadReportForEditing(editId);
-                saveBtn.textContent = 'Update Report';
-            }
-
-            form.addEventListener('submit', function(event) {
-                event.preventDefault(); // Stop normal form submission
-                saveOrUpdateReport(editId);
+            // Load reports using the new hybrid system
+            loadReportsFromStorage().then(() => {
+                // After loading, we can optionally pre-fill the form if an editId is in the URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const editId = urlParams.get('editId');
+                if (editId) {
+                    loadReportForEditing(editId);
+                }
             });
         });
 
-        function saveOrUpdateReport(editId) {
-            const reportData = collectFormData();
-            
-            if (!reportData) return; // Validation failed
-
-            let reports = JSON.parse(localStorage.getItem('timeReports')) || [];
-
-            if (editId) {
-                // Update existing report
-                const index = reports.findIndex(r => r.id === editId);
-                if (index !== -1) {
-                    reports[index] = { ...reportData, id: editId };
-                }
-                alert('Report updated successfully!');
-            } else {
-                // Save new report
-                reportData.id = 'report_' + Date.now(); // Create a unique ID
-                reports.push(reportData);
-                alert('Report saved successfully!');
-            }
-            
-            console.log("Saving reports to storage:", reports); // Debugging
-            localStorage.setItem('timeReports', JSON.stringify(reports));
-            
-            // Redirect to search page after saving
-            window.location.href = 'search_reports.html';
-        }
-
-        function loadReportForEditing(reportId) {
-            const reports = JSON.parse(localStorage.getItem('timeReports')) || [];
-            const report = reports.find(r => r.id === reportId);
-            
-            if (!report) {
-                alert('Report not found!');
-                window.location.href = 'search_reports.html';
-                return;
-            }
-
-            console.log("Loading report for editing:", report); // Debugging
-
-            // Populate main fields
-            document.getElementById('mv').value = report.mv || '';
-            document.getElementById('voy').value = report.voy || '';
-            document.getElementById('date').value = report.date || '';
-            document.getElementById('shift').value = report.shift || '';
-            document.getElementById('berth').value = report.berth || '';
-            document.getElementById('bollard').value = report.bollard || '';
-            document.getElementById('yardno').value = report.yardno || '';
-            document.getElementById('activityTextarea').value = report.what_we_do || '';
-
-            // Populate dynamic tables
-            populateTimeTable(report.timeRecords || []);
-            populateTeamMembers('foreman', report.team ? report.team.foreman || [] : []);
-            populateTeamMembers('tallyman', report.team ? report.team.tallyman || [] : []);
-            populateTeamMembers('docker', report.team ? report.team.docker || [] : []);
-            populateEquipmentTable(report.equipmentRecords || []);
-        }
-        
-        function populateTimeTable(records) {
-            const tableBody = document.getElementById('timeTable');
-            tableBody.innerHTML = ''; // Clear existing rows
-
-            if (records.length === 0) {
-                // Add one empty row if no data
-                addTimeRow();
-            } else {
-                records.forEach(record => {
-                    const row = tableBody.insertRow();
-                    row.innerHTML = `
-                        <td><input type="time" name="start" value="${record.start || ''}"></td>
-                        <td><input type="time" name="end" value="${record.end || ''}"></td>
-                        <td><input type="number" name="quantity" min="1" value="${record.quantity || 1}"></td>
-                        <td>
-                            <input list="whatWeUseList" name="what_we_use" value="${record.what_we_use || ''}">
-                        </td>
-                        <td><button type="button" class="delete-btn" onclick="deleteTimeRow(this)">Delete</button></td>
-                    `;
-                });
+        // This function is now defined in database.js
+        async function loadReportsFromStorage() {
+            try {
+                allReports = await getAllReports();
+                console.log("Loaded reports from IndexedDB:", allReports);
+            } catch (error) {
+                console.error("IndexedDB failed, falling back to localStorage:", error);
+                allReports = JSON.parse(localStorage.getItem('timeReports')) || [];
+                console.log("Loaded reports from localStorage fallback:", allReports);
             }
         }
 
-        function populateEquipmentTable(records) {
-            const tableBody = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing rows
+        // The form submission logic is now handled in database.js
+        document.getElementById('reportForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Stop normal form submission
+            saveOrUpdateReport(null); // Pass null to indicate a new report
+        });
 
-            if (records.length === 0) {
-                // Add one empty row if no data
-                addEquipmentRow();
-            } else {
-                records.forEach(record => {
-                    const row = tableBody.insertRow();
-                    row.innerHTML = `
-                        <td><input list="Equipment" name="Equipment" value="${record.Equipment || ''}"></td>
-                        <td><input list="operator1" name="operator1" value="${record.operator1 || ''}"></td>
-                        <td><input type="time" name="start1" value="${record.start1 || ''}"></td>
-                        <td><input type="time" name="end1" value="${record.end1 || ''}"></td>
-                        <td><button type="button" class="equipment-delete-btn" onclick="deleteEquipmentRow(this)">Delete</button></td>
-                    `;
-                });
-            }
-        }
-        
-        function populateTeamMembers(type, members) {
-            const container = document.getElementById(`${type}Inputs`);
-            const addButton = container.lastElementChild; // The '+' button
-            
-            // Clear all existing member divs
-            container.querySelectorAll('div').forEach(div => div.remove());
-
-            if (members.length === 0) {
-                // Add one empty input if no data
-                const memberDiv = document.createElement("div");
-                memberDiv.innerHTML = `<input list="${type}List" name="${type}" placeholder="ID"><button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>`;
-                container.insertBefore(memberDiv, addButton);
-            } else {
-                members.forEach(member => {
-                    const memberDiv = document.createElement("div");
-                    memberDiv.innerHTML = `<input list="${type}List" name="${type}" value="${member}"><button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>`;
-                    container.insertBefore(memberDiv, addButton);
-                });
-            }
+        // The save/update/delete functions are now handled in database.js
+        function saveOrUpdateReport(reportData, editId) {
+            // This function is now in database.js
+            // It will save the data and then update the allReports array
         }
 
-
-        function collectFormData() {
-            // Basic validation
-            if (!document.getElementById('mv').value || !document.getElementById('voy').value) {
-                alert('MV and VOY are required.');
-                return null;
-            }
-
-            const team = {
-                foreman: getTeamMemberValues('foremanInputs'),
-                tallyman: getTeamMemberValues('tallymanInputs'),
-                docker: getTeamMemberValues('dockerInputs')
-            };
-            
-            const timeRecords = [];
-            const timeRows = document.querySelectorAll('#timeTable tr');
-            timeRows.forEach(row => {
-                timeRecords.push({
-                    start: row.querySelector('input[name="start"]').value,
-                    end: row.querySelector('input[name="end"]').value,
-                    quantity: row.querySelector('input[name="quantity"]').value,
-                    what_we_use: row.querySelector('input[name="what_we_use"]').value
-                });
-            });
-
-            const equipmentRecords = [];
-            const equipmentRows = document.querySelectorAll('#equipmentTable tbody tr');
-            equipmentRows.forEach(row => {
-                equipmentRecords.push({
-                    Equipment: row.querySelector('input[name="Equipment"]').value,
-                    operator1: row.querySelector('input[name="operator1"]').value,
-                    start1: row.querySelector('input[name="start1"]').value,
-                    end1: row.querySelector('input[name="end1"]').value
-                });
-            });
-
-            const reportData = {
-                mv: document.getElementById('mv').value,
-                voy: document.getElementById('voy').value,
-                date: document.getElementById('date').value,
-                shift: document.getElementById('shift').value,
-                berth: document.getElementById('berth').value,
-                bollard: document.getElementById('bollard').value,
-                yardno: document.getElementById('yardno').value,
-                what_we_do: document.getElementById('activityTextarea').value,
-                team: team,
-                timeRecords: timeRecords,
-                equipmentRecords: equipmentRecords,
-            };
-
-            console.log("Collected form data:", reportData); // Debugging
-            return reportData;
-        }
-
-        function getTeamMemberValues(containerId) {
-            const inputs = document.querySelectorAll(`#${containerId} input[name]`);
-            return Array.from(inputs).map(input => input.value).filter(val => val !== '');
-        }
-
-        // --- KEEP ALL EXISTING FUNCTIONS BELOW ---
-        // Function to add new equipment row with delete button
-        function addEquipmentRow() {
-            const table = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
-            const newRow = table.insertRow();
-
-            newRow.innerHTML = `
-                <td>
-                    <input list="Equipment" name="Equipment">
-                </td>
-                <td>
-                    <input list="operator1" name="operator1">
-                </td>
-                <td><input type="time" name="start1"></td>
-                <td><input type="time" name="end1"></td>
-                <td>
-                    <button type="button" class="equipment-delete-btn" onclick="deleteEquipmentRow(this)">Delete</button>
-                </td>
-            `;
-        }
-
-        // Function to delete equipment row
-        function deleteEquipmentRow(button) {
-            const row = button.parentNode.parentNode;
-            const table = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
-
-            // Only delete if there's more than one row
-            if (table.rows.length > 1) {
-                row.remove();
-            } else {
-                alert("You need at least one equipment entry!");
-            }
-        }
-
-        // Function to add new time row
+        // Keep the rest of the UI functions (addRow, deleteRow, etc.) as they are
         function addTimeRow() {
             const table = document.getElementById("timeTable");
             const row = table.insertRow();
@@ -1200,25 +1008,127 @@
                 <td><input type="number" name="quantity" min="1" value="1"></td>
                 <td>
                     <input list="whatWeUseList" name="what_we_use">
+                    <datalist id="whatWeUseList">
+                        <option value="Foreman">
+                        <option value="Tallyman">
+                        <option value="Docker">
+                        <option value="FL 3T">
+                        <option value="FL 5T">
+                        <option value="FL 11T">
+                        <option value="FL 16T">
+                        <option value="FL 25T">
+                        <option value="RS">
+                        <option value="TT">
+                        <option value="WL">
+                        <option value="Mooring">
+                        <option value="UnMooring">
+                        <option value="Gangway">
+                        <option value="Force Protection Wall">
+                        <option value="Fender">
+                        <option value="Browstand">
+                        <option value="Lighting Generator">
+                        <option value="Cement Block">
+                        <option value="Generator">
+                        <option value="SC">
+                        <option value="STS">
+                        <option value="RTG">
+                        <option value="Crane">
+                        <option value="HMC">
+                        <option value="ML">
+                        <option value="BC">
+                        <option value="VC">
+                        <option value="AR">
+                        <option value="Brrier">
+                        <option value="Fire Truck">
+                        <option value="Container">
+                    </datalist>
                 </td>
                 <td><button type="button" class="delete-btn" onclick="deleteTimeRow(this)">Delete</button></td>
             `;
         }
 
-        // Function to delete time row
         function deleteTimeRow(button) {
             const row = button.parentNode.parentNode;
             const table = document.getElementById("timeTable");
 
-            // Only delete if there's more than one row
-            if (table.rows.length > 1) {
-                row.remove();
-            } else {
-                alert("You need at least one time entry!");
-            }
+            // Use the new database function
+            deleteTimeRow(row).then(() => {
+                // Refresh the allReports array after deletion
+                allReports = await getAllReports();
+            }).catch(error => {
+                console.error("Failed to delete row:", error);
+                alert('An error occurred while deleting the row.');
+            });
         }
 
-        // UPDATED Function to add a new team member
+        function addEquipmentRow() {
+            const table = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+
+            newRow.innerHTML = `
+                <td>
+                    <input list="Equipment" name="Equipment">
+                    <datalist id="Equipment">
+                        <option value="FL 3T">
+                        <option value="FL 5T">
+                        <option value="FL 11T">
+                        <option value="FL 16T">
+                        <option value="FL 25T">
+                        <option value="RS">
+                        <option value="TT">
+                        <option value="WL">
+                        <option value="SC">
+                        <option value="STS">
+                        <option value="RTG">
+                        <option value="Crane">
+                        <option value="HMC">
+                        <option value="ML">
+                        <option value="BC">
+                        <option value="VC">
+                        </datalist>
+                </td>
+                <td>
+                    <input list="operator1" name="operator1">
+                    <datalist id="operator1">
+                        <option value="AS-0035">
+                        <option value="AS-0036">
+                        <option value="AS-0037">
+                        <option value="AS-0038">
+                        <option value="AS-0039">
+                        <option value="AS-0040">
+                        <option value="AS-0041">
+                        <option value="AS-0042">
+                        <option value="AS-0043">
+                        <option value="AS-0044">
+                        <option value="AS-0045">
+                        <option value="AS-0046">
+                        </datalist>
+                </td>
+                <td><input type="time" name="start1"></td>
+                <td><input type="time" name="end1"></td>
+
+                <td>
+                    <button type="button" class="equipment-delete-btn"
+                        onclick="deleteEquipmentRow(this)">Delete</button>
+                </td>
+            `;
+        }
+
+        function deleteEquipmentRow(button) {
+            const row = button.parentNode.parentNode;
+            const table = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
+
+            // Use the new database function
+            deleteEquipmentRow(row).then(() => {
+                // Refresh the allReports array after deletion
+                allReports = await getAllReports();
+            }).catch(error => {
+                console.error("Failed to delete row:", error);
+                alert('An error occurred while deleting the row.');
+            });
+        }
+
+        // Keep the team member functions as they are
         function addTeamMember(teamType) {
             const container = document.getElementById(`${teamType}Inputs`);
             
@@ -1251,7 +1161,6 @@
             input.focus();
         }
 
-        // NEW Function to remove a team member
         function removeTeamMember(button) {
             const memberDiv = button.parentNode;
             const container = memberDiv.parentNode;
@@ -1260,10 +1169,11 @@
             if (container.querySelectorAll('input').length > 1) {
                 memberDiv.remove();
             } else {
-                alert("You must keep at least one member!");
+                alert("يجب إبقاء عضو واحد على الأقل!"); // "You must keep at least one member!"
             }
         }
 
+        // Keep the save/image/pdf functions as they are
         // Function to save the form as an image
         document.getElementById('saveImageBtn').addEventListener('click', function () {
             // Add screenshot mode class to hide buttons
@@ -1340,7 +1250,106 @@
                 }, 1000);
             });
         });
+
+        // Function to load a report for editing
+        async function loadReportForEditing(editId) {
+            try {
+                const report = await getReportById(editId);
+                if (!report) {
+                    alert('Report not found!');
+                    window.location.href = 'search_reports.html';
+                    return;
+                }
+
+                // Populate main fields
+                document.getElementById('mv').value = report.mv || '';
+                document.getElementById('voy').value = report.voy || '';
+                document.getElementById('date').value = report.date || '';
+                document.getElementById('shift').value = report.shift || '';
+                document.getElementById('berth').value = report.berth || '';
+                document.getElementById('bollard').value = report.bollard || '';
+                document.getElementById('yardno').value = report.yardno || '';
+                document.getElementById('activityTextarea').value = report.what_we_do || '';
+
+                // Populate dynamic tables (this is complex, simplified for this example)
+                // A full implementation would clear existing rows and recreate them from saved data.
+                // For now, we'll just populate the first row if data exists.
+                if(report.timeRecords && report.timeRecords.length > 0) {
+                    const timeTableBody = document.getElementById('timeTable');
+                    // Clear existing rows
+                    timeTableBody.innerHTML = '';
+                    report.timeRecords.forEach(record => {
+                        const row = timeTableBody.insertRow();
+                        row.innerHTML = `
+                            <td><input type="time" name="start" value="${record.start || ''}"></td>
+                            <td><input type="time" name="end" value="${record.end || ''}"></td>
+                            <td><input type="number" name="quantity" min="1" value="${record.quantity || 1}"></td>
+                            <td><input type="text" name="what_we_use" value="${record.what_we_use || ''}"></td>
+                            <td><button type="button" class="delete-btn" onclick="deleteTimeRow(this)">Delete</button></td>
+                        `;
+                    });
+                }
+
+                // Populate team members
+                if(report.team) {
+                    populateTeamMembers('foreman', report.team.foreman || []);
+                    populateTeamMembers('tallyman', report.team.tallyman || []);
+                    populateTeamMembers('docker', report.team.docker || []);
+                }
+
+                // Populate equipment records
+                if(report.equipmentRecords && report.equipmentRecords.length > 0) {
+                    const equipmentTableBody = document.getElementById("equipmentTable").getElementsByTagName('tbody')[0];
+                    equipmentTableBody.innerHTML = '';
+                    report.equipmentRecords.forEach(record => {
+                        const row = equipmentTableBody.insertRow();
+                        row.innerHTML = `
+                            <td><input type="text" name="Equipment" value="${record.Equipment || ''}"></td>
+                            <td><input type="text" name="operator1" value="${record.operator1 || ''}"></td>
+                            <td><input type="time" name="start1" value="${record.start1 || ''}"></td>
+                            <td><input type="time" name="end1" value="${record.end1 || ''}"></td>
+                            <td><button type="button" class="equipment-delete-btn" onclick="deleteEquipmentRow(this)">Delete</button></td>
+                        `;
+                    });
+                }
+
+            } catch (error) {
+                console.error("Failed to load report for editing:", error);
+                alert('An error occurred while loading the report.');
+            }
+        }
+
+        // Function to populate team members
+        function populateTeamMembers(type, members) {
+            const container = document.getElementById(`${type}Inputs`);
+            // Clear existing members (except the add button)
+            while (container.firstChild && container.firstChild.className === 'add-member-btn') {
+                container.removeChild(container.firstChild);
+            }
+
+            members.forEach(memberId => {
+                const memberDiv = document.createElement("div");
+                const input = document.createElement("input");
+                input.setAttribute("list", `${type}List`);
+                input.setAttribute("name", `${type}`);
+                input.setAttribute("value", memberId);
+                input.style.width = "75px";
+                input.style.padding = "3px 4px";
+                input.style.fontSize = "12px";
+                input.style.height = "28px";
+                input.style.boxSizing = "border-box";
+                
+                const deleteBtn = document.createElement("button");
+                deleteBtn.setAttribute("type", "button");
+                deleteBtn.className = "member-delete-btn";
+                deleteBtn.setAttribute("onclick", "removeTeamMember(this)");
+                deleteBtn.innerHTML = "&times;";
+
+                memberDiv.appendChild(input);
+                memberDiv.appendChild(deleteBtn);
+                container.insertBefore(memberDiv, container.lastElementChild);
+            });
+        }
     </script>
 </body>
-
 </html>

@@ -6,16 +6,20 @@
     <title>TIME REPORT - Advanced Search</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- NEW: Link to the database file -->
+    <script src="database.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
+            print-color-adjust: exact;
             padding: 20px;
-            background: linear-gradient(135deg, #e9eff4 0%, #d1dbe6 100%);
+            background: #fff;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
+            align-items: center;
         }
 
         .container {
@@ -26,6 +30,7 @@
             border-radius: 8px;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
+            position: relative;
         }
 
         .header {
@@ -64,6 +69,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .search-input {
@@ -72,6 +78,27 @@
             border: 1px solid #ced4da;
             border-radius: 6px;
             font-size: 16px;
+        }
+        
+        /* NEW: Export Data Button Style */
+        .export-btn {
+            padding: 10px 18px;
+            background: linear-gradient(to bottom, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .export-btn:active {
+            transform: translateY(0);
         }
 
         .toggle-filters-btn {
@@ -136,7 +163,6 @@
             text-align: center;
         }
 
-
         .results-table th {
             background-color: #f4b400;
             color: #333;
@@ -187,7 +213,7 @@
         }
 
         .pams-done-btn {
-            background-color: #28a745; /* Green */
+            background-color: #28a745;
         }
         .pams-done-btn:hover {
             background-color: #218838;
@@ -204,7 +230,7 @@
             margin-left: 5px;
         }
         
-        /* MODAL STYLES - RENAMED AND SIMPLIFIED */
+        /* MODAL STYLES - ENHANCED AND SIMPLIFIED */
         .modal {
             display: none; 
             position: fixed; 
@@ -218,14 +244,14 @@
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 5% auto; /* More vertical margin */
+            margin: 5% auto; 
             padding: 20px;
             border: 1px solid #888;
             width: 80%;
             max-width: 500px;
             max-height: 90vh; /* Max height to prevent overflow */
             border-radius: 8px;
-            overflow-y: auto; /* Allow scrolling */
+            overflow-y: auto; /* Allow scrolling if content is too long */
         }
         .modal-header {
             display: flex;
@@ -260,6 +286,108 @@
         .close:focus {
             color: #000;
         }
+
+        /* Styles for form elements inside modal, copied from create_report.html */
+        .modal-form table {
+            width: 100%;
+            margin-bottom: 10px;
+            border: 1px solid #c0c0c0;
+        }
+        .modal-form th, .modal-form td {
+            border: 1px solid #c0c0c0;
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .modal-form .header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            padding: 10px 0;
+            background: linear-gradient(to right, #e0e0e2, #f8fafa);
+            color: #333;
+        }
+        .modal-form .yellow {
+            background: linear-gradient(to bottom, #f4b400);
+            color: #333;
+            font-weight: 700;
+        }
+
+        .modal-form input[type="text"],
+        .modal-form input[type="date"],
+        .modal-form input[type="time"],
+        .modal-form select {
+            width: calc(100% - 10px);
+            padding: 8px;
+            margin: 1px 0;
+            border: 1px solid #b6b2b2;
+            border-radius: 4px; /* Less rounded for modal */
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .modal-form textarea {
+            width: calc(100% - 10px);
+            padding: 8px;
+            margin: 1px 0;
+            border: 1px solid #b6b2b2;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        .modal-form .form-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .modal-form .add-line-btn {
+            margin: 5px;
+            padding: 10px 18px;
+            background: linear-gradient(to bottom, #52aa67, #52a764);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .modal-form .save-image-btn {
+            background: linear-gradient(to bottom, #1f81eb, #1e7ee4) !important;
+        }
+        .modal-form .save-pdf-btn {
+            background: linear-gradient(to bottom, #cf3343, #c02d3b) !important;
+        }
+
+        .download-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .option-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .option-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -278,6 +406,10 @@
 
         <div class="search-controls">
             <input type="text" id="mainSearchInput" class="search-input" placeholder="Search by Vessel, Voyage, etc.">
+            <!-- NEW EXPORT DATA BUTTON -->
+            <button class="export-btn" id="exportDataBtn" title="Copy all reports data to clipboard for GitHub update">
+                <i class="fas fa-download"></i> Export Data
+            </button>
             <button class="toggle-filters-btn" onclick="toggleFilters()">
                 <i class="fas fa-filter"></i> Hide Filters
             </button>
@@ -344,7 +476,7 @@
         </table>
     </div>
 
-    <!-- The Modal for Viewing -->
+    <!-- The Modal for Viewing/Editing -->
     <div id="viewModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -353,6 +485,10 @@
             </div>
             <div class="modal-body" id="modalBodyContent">
                 <!-- Content will be dynamically inserted here -->
+            </div>
+            <div class="download-options">
+                <button class="option-btn" id="downloadPdfBtn" title="Save this report as PDF">Save as PDF</button>
+                <button class="option-btn" id="downloadImageBtn" title="Save this report as Image">Save as Image</button>
             </div>
         </div>
     </div>
@@ -370,12 +506,28 @@
             document.getElementById('berthFilter').addEventListener('change', applyFilters);
             // Event listener for PAMS filter
             document.getElementById('pamsStatusFilter').addEventListener('change', applyFilters);
+
+            // NEW: Add event listener for export button
+            document.getElementById('exportDataBtn').addEventListener('click', exportDataToClipboard);
+
+            // NEW: Add event listeners for modal download buttons
+            document.getElementById('downloadPdfBtn').addEventListener('click', () => openPdfModal());
+            document.getElementById('downloadImageBtn').addEventListener('click', () => openImageModal());
         });
 
         function loadReportsFromStorage() {
-            allReports = JSON.parse(localStorage.getItem('timeReports')) || [];
-            console.log("Loaded reports from storage:", allReports); // Debugging
-            applyFilters(); // Initial render
+            // Try to load from the new IndexedDB system first
+            getAllReports().then(reports => {
+                allReports = reports;
+                console.log("Loaded reports from IndexedDB:", allReports); // Debugging
+                applyFilters(); // Initial render
+            }).catch(error => {
+                console.error("IndexedDB failed, falling back to localStorage:", error);
+                // Fallback to old localStorage method
+                allReports = JSON.parse(localStorage.getItem('timeReports')) || [];
+                console.log("Loaded reports from localStorage fallback:", allReports);
+                applyFilters();
+            });
         }
 
         function applyFilters() {
@@ -401,12 +553,12 @@
                 const matchesYard = !yardFilter || report.yardno === yardFilter;
                 const matchesBerth = !berthFilter || report.berth === berthFilter;
 
-                // --- PAMS Status Filter ---
+                // --- PAMS Status Filter (NEW LOGIC) ---
                 let matchesPamsStatus = true;
                 if (pamsStatusFilter === 'done') {
                     matchesPamsStatus = report.pamsDone === true;
                 } else if (pamsStatusFilter === 'pending') {
-                    matchesPamsStatus = report.pamsDone !== true;
+                    matchesPamsStatus = report.pamsDone !== true; // Catches both false and undefined
                 }
 
                 return matchesSearch && matchesStartDate && matchesEndDate && matchesYard && matchesBerth && matchesPamsStatus;
@@ -464,8 +616,6 @@
                 <p><strong>Voyage:</strong> ${report.voy}</p>
                 <p><strong>Date:</strong> ${report.date}</p>
                 <p><strong>Shift:</strong> ${report.shift}</p>
-                <p><strong>Berth:</strong> ${report.berth}</p>
-                <p><strong>Yard:</strong> ${report.yardno}</p>
                 <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
                 <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
                 <hr>
@@ -484,19 +634,28 @@
 
         function deleteReport(reportId) {
             if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
-                allReports = allReports.filter(r => r.id !== reportId);
-                localStorage.setItem('timeReports', JSON.stringify(allReports));
-                applyFilters(); // Refresh table with the new list
+                // Use the new database function
+                deleteReport(reportId).then(() => {
+                    applyFilters(); // Refresh table with the new list
+                }).catch(error => {
+                    console.error("Failed to delete report:", error);
+                    alert('An error occurred while deleting the report.');
+                });
             }
         }
         
         function markPamsDone(reportId) {
             if (confirm('Mark this report as PAMS Done?')) {
+                // Use the new database function
                 const reportIndex = allReports.findIndex(r => r.id === reportId);
                 if (reportIndex !== -1) {
                     allReports[reportIndex].pamsDone = true;
-                    localStorage.setItem('timeReports', JSON.stringify(allReports));
-                    applyFilters(); // Re-render the table
+                    saveOrUpdateReport(allReports[reportIndex]).then(() => {
+                        applyFilters(); // Re-render the table
+                    }).catch(error => {
+                        console.error("Failed to update report:", error);
+                        alert('An error occurred while updating the report.');
+                    });
                 }
             }
         }
@@ -512,6 +671,135 @@
                 filtersSection.style.display = 'none';
                 button.innerHTML = '<i class="fas fa-filter"></i> Show Filters';
             }
+        }
+        
+        // Modal Close Logic
+        window.onclick = function(event) {
+            const modal = document.getElementById('viewModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // NEW: Function to open modal for saving as PDF
+        function openPdfModal(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) {
+                alert('Report not found!');
+                return;
+            }
+            const modalBody = document.getElementById('modalBodyContent');
+            
+            // Populate modal with read-only data
+            modalBody.innerHTML = `
+                <p><strong>Vessel:</strong> ${report.mv}</p>
+                <p><strong>Voyage:</strong> ${report.voy}</p>
+                <p><strong>Date:</strong> ${report.date}</p>
+                <p><strong>Shift:</strong> ${report.shift}</p>
+                <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
+                <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
+                <hr>
+                <h4>Team:</h4>
+                <p><strong>Foreman:</strong> ${report.team ? report.team.foreman.join(', ') : 'N/A'}</p>
+                <p><strong>Tallyman:</strong> ${report.team ? report.team.tallyman.join(', ') : 'N/A'}</p>
+                <p><strong>Docker:</strong> ${report.team ? report.team.docker.join(', ') : 'N/A'}</p>
+            `;
+            
+            document.getElementById('viewModal').style.display = "block";
+            document.getElementById('downloadPdfBtn').onclick = () => savePdfFromModal(report);
+        }
+
+        // NEW: Function to open modal for saving as Image
+        function openImageModal(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) {
+                alert('Report not found!');
+                return;
+            }
+            const modalBody = document.getElementById('modalBodyContent');
+            
+            // Populate modal with read-only data
+            modalBody.innerHTML = `
+                <p><strong>Vessel:</strong> ${report.mv}</p>
+                <p><strong>Voyage:</strong> ${report.voy}</p>
+                <p><strong>Date:</strong> ${report.date}</p>
+                <p><strong>Shift:</strong> ${report.shift}</p>
+                <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
+                <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
+                <hr>
+                <h4>Team:</h4>
+                <p><strong>Foreman:</strong> ${report.team ? report.team.foreman.join(', ') : 'N/A'}</p>
+                <p><strong>Tallyman:</strong> ${report.team ? report.team.tallyman.join(', ') : 'N/A'}</p>
+                <p><strong>Docker:</strong> ${report.team ? report.team.docker.join(', ') : 'N/A'}</p>
+            `;
+            
+            document.getElementById('viewModal').style.display = "block";
+            document.getElementById('downloadImageBtn').onclick = () => saveImageFromModal(report);
+        }
+
+        // NEW: Function to save PDF from modal content
+        function savePdfFromModal(report) {
+            const modalContent = document.getElementById('modalContent');
+            
+            html2canvas(modalContent, {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF('p', 'pt', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgWidth = imgProps.width;
+                const imgHeight = imgProps.height;
+                const ratio = pageWidth / imgWidth;
+                const scaledHeight = imgHeight * ratio;
+
+                let position = 0;
+                pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
+                position -= pageHeight;
+
+                while (position > -scaledHeight) {
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
+                    position -= pageHeight;
+                }
+
+                pdf.save('time_report_' + new Date().toISOString().slice(0, 10) + '.pdf');
+
+                // Remove screenshot mode class
+                setTimeout(() => {
+                    document.querySelector('.container').classList.remove('screenshot-mode');
+                    document.getElementById('viewModal').style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // NEW: Function to save Image from modal content
+        function saveImageFromModal(report) {
+            const modalContent = document.getElementById('modalContent');
+            
+            html2canvas(modalContent, {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const imageData = canvas.toDataURL('image/png');
+
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.download = 'time_report_' + report.date + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Remove screenshot mode class
+                setTimeout(() => {
+                    document.querySelector('.container').classList.remove('screenshot-mode');
+                    document.getElementById('viewModal').style.display = 'none';
+                }, 1000);
+            });
         }
         
         // Modal Close Logic
