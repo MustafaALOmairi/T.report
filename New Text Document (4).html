@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIME REPORT - Create Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* ... (Keep all existing CSS from previous version) ... */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #e9eff4 0%, #d1dbe6 100%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 2px auto;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #1f81eb;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .back-link:hover {
+            color: #1a6dc7;
+        }
+
+        /* ... (Keep all other CSS) ... */
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="form-header">
+             <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+        <form id="reportForm">
+            <!-- ... (Keep all existing HTML for the form) ... -->
+        </form>
+    </div>
+
+    <div id="screenshotGuide" class="screenshot-guide">
+        <div class="guide-icon">📷</div>
+        <h3>Screenshot Guide</h3>
+        <p>Your report will be captured as an image. Make sure all information is entered correctly before saving.</p>
+        <button class="close-guide" onclick="document.getElementById('screenshotGuide').style.display='none'">Got
+            it!</button>
+    </div>
+
+    <script>
+        // PASTE YOUR FIREBASE CONFIGURATION HERE
+        const firebaseConfig = {
+            apiKey: "AIzaSy...YOUR_API_KEY...",
+            authDomain: "your-project-id.firebaseapp.com",
+            databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
+            messagingSenderId: "...",
+            appId: "1:...:web:..."
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('reportForm');
+            const saveBtn = document.getElementById('saveReportBtn');
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('editId');
+
+            if (editId) {
+                loadReportForEditing(editId);
+                saveBtn.textContent = 'Update Report';
+            }
+
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                saveOrUpdateReport(editId);
+            });
+        });
+
+        function saveOrUpdateReport(editId) {
+            const reportData = collectFormData();
+            
+            if (!reportData) return;
+
+            if (editId) {
+                // Update existing report
+                database.ref('reports/' + editId).update(reportData)
+                    .then(() => {
+                        alert('Report updated successfully!');
+                        window.location.href = 'search_reports.html';
+                    })
+                    .catch((error) => {
+                        console.error("Error updating report:", error);
+                        alert('Error updating report. Please try again.');
+                    });
+            } else {
+                // Save new report
+                const newReportRef = database.ref('reports').push();
+                newReportRef.set(reportData)
+                    .then(() => {
+                        alert('Report saved successfully!');
+                        window.location.href = 'search_reports.html';
+                    })
+                    .catch((error) => {
+                        console.error("Error saving report:", error);
+                        alert('Error saving report. Please try again.');
+                    });
+            }
+        }
+
+        function loadReportForEditing(editId) {
+            const reportRef = database.ref('reports/' + editId);
+            reportRef.once('value', (snapshot) => {
+                const report = snapshot.val();
+                
+                if (!report) {
+                    alert('Report not found!');
+                    window.location.href = 'search_reports.html';
+                    return;
+                }
+
+                // Populate main fields
+                document.getElementById('mv').value = report.mv || '';
+                document.getElementById('voy').value = report.voy || '';
+                document.getElementById('date').value = report.date || '';
+                document.getElementById('shift').value = report.shift || '';
+                document.getElementById('berth').value = report.berth || '';
+                document.getElementById('bollard').value = report.bollard || '';
+                document.getElementById('yardno').value = report.yardno || '';
+                document.getElementById('activityTextarea').value = report.what_we_do || '';
+
+                // Populate dynamic tables (simplified for this example)
+                if(report.timeRecords && report.timeRecords.length > 0) {
+                    const firstTimeRow = report.timeRecords[0];
+                    const timeTableBody = document.getElementById('timeTable').rows[0];
+                    if(timeTableBody) {
+                        timeTableBody.querySelector('input[name="start"]').value = firstTimeRow.start || '';
+                        timeTableBody.querySelector('input[name="end"]').value = firstTimeRow.end || '';
+                        timeTableBody.querySelector('input[name="quantity"]').value = firstTimeRow.quantity || 1;
+                        timeTableBody.querySelector('input[name="what_we_use"]').value = firstTimeRow.what_we_use || '';
+                    }
+                }
+                
+                // Populate team members
+                if(report.team) {
+                    populateTeamMembers('foreman', report.team.foreman || []);
+                    populateTeamMembers('tallyman', report.team.tallyman || []);
+                    populateTeamMembers('docker', report.team.docker || []);
+                }
+            });
+        }
+        
+        function populateTeamMembers(type, members) {
+            const container = document.getElementById(`${type}Inputs`);
+            const addButton = container.lastElementChild;
+            
+            // Clear all existing member divs
+            container.querySelectorAll('div').forEach(div => div.remove());
+
+            if (members.length === 0) {
+                // Add one empty input if no data
+                const memberDiv = document.createElement("div");
+                memberDiv.innerHTML = `<input list="${type}List" name="${type}" placeholder="ID"><button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>`;
+                container.insertBefore(memberDiv, addButton);
+            } else {
+                members.forEach(member => {
+                    const memberDiv = document.createElement("div");
+                    memberDiv.innerHTML = `<input list="${type}List" name="${type}" value="${member}"><button type="button" class="member-delete-btn" onclick="removeTeamMember(this)">×</button>`;
+                    container.insertBefore(memberDiv, addButton);
+                });
+            }
+        }
+
+        function collectFormData() {
+            // Basic validation
+            if (!document.getElementById('mv').value || !document.getElementById('voy').value) {
+                alert('MV and VOY are required.');
+                return null;
+            }
+
+            const team = {
+                foreman: getTeamMemberValues('foremanInputs'),
+                tallyman: getTeamMemberValues('tallymanInputs'),
+                docker: getTeamMemberValues('dockerInputs')
+            };
+            
+            const timeRecords = [];
+            const timeRows = document.querySelectorAll('#timeTable tr');
+            timeRows.forEach(row => {
+                timeRecords.push({
+                    start: row.querySelector('input[name="start"]').value,
+                    end: row.querySelector('input[name="end"]').value,
+                    quantity: row.querySelector('input[name="quantity"]').value,
+                    what_we_use: row.querySelector('input[name="what_we_use"]').value
+                });
+            });
+
+            return {
+                mv: document.getElementById('mv').value,
+                voy: document.getElementById('voy').value,
+                date: document.getElementById('date').value,
+                shift: document.getElementById('shift').value,
+                berth: document.getElementById('berth').value,
+                bollard: document.getElementById('bollard').value,
+                yardno: document.getElementById('yardno').value,
+                what_we_do: document.getElementById('activityTextarea').value,
+                team: team,
+                timeRecords: timeRecords,
+                // Add other fields as needed
+            };
+        }
+
+        function getTeamMemberValues(containerId) {
+            const inputs = document.querySelectorAll(`#${containerId} input[name]`);
+            return Array.from(inputs).map(input => input.value).filter(val => val !== '');
+        }
+
+        // ... (Keep all other functions like addTeamMember, removeTeamMember, saveImageBtn, savePdfBtn) ... */
+    </script>
+</body>
+</html>

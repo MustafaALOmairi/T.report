@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIME REPORT - Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #e9eff4 0%, #d1dbe6 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .main-container {
+            text-align: center;
+        }
+
+        .brand-logo {
+            margin-bottom: 20px;
+        }
+
+        .brand-logo i {
+            font-size: 60px;
+            color: #1f81eb;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 40px;
+        }
+
+        .modules-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .report-module {
+            width: 280px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            background-color: #fff;
+            text-decoration: none; /* Remove underline from link */
+            color: inherit; /* Inherit text color */
+        }
+
+        .report-module:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .new-report-module {
+            border: 3px solid #52aa67;
+        }
+
+        .new-report-module .module-icon {
+            color: #52aa67;
+        }
+
+        .search-reports-module {
+            border: 3px solid #1f81eb;
+        }
+
+        .search-reports-module .module-icon {
+            color: #1f81eb;
+        }
+
+        .module-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .module-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .module-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .module-button {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .new-report-module .module-button {
+            background-color: #52aa67;
+        }
+        .new-report-module .module-button:hover {
+            background-color: #459456;
+        }
+
+        .search-reports-module .module-button {
+            background-color: #1f81eb;
+        }
+        .search-reports-module .module-button:hover {
+            background-color: #1a6dc7;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="main-container">
+        <div class="brand-logo">
+            <i class="fas fa-ship"></i>
+        </div>
+        <h1>TIME REPORT</h1>
+        
+        <div class="modules-container">
+            <!-- New Report Module -->
+            <a href="create_report.html" class="report-module new-report-module">
+                <div class="module-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="module-title">New Report</div>
+                <div class="module-subtitle">Create shift report</div>
+                <div class="module-button">Create New Entry</div>
+            </a>
+
+            <!-- Search Reports Module -->
+            <a href="search_reports.html" class="report-module search-reports-module">
+                <div class="module-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="module-title">Search Reports</div>
+                <div class="module-subtitle">Find historical data</div>
+                <div class="module-button">Search Advanced Filters</div>
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
