@@ -66,6 +66,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
         }
 
         .search-input {
@@ -76,9 +77,8 @@
             font-size: 16px;
         }
 
-        .toggle-filters-btn {
+        .toggle-filters-btn, .download-selected-btn {
             padding: 10px 15px;
-            background: #6c757d;
             color: white;
             border: none;
             border-radius: 6px;
@@ -86,8 +86,19 @@
             font-weight: bold;
             transition: background 0.3s;
         }
+
+        .toggle-filters-btn {
+            background: #6c757d;
+        }
         .toggle-filters-btn:hover {
             background: #5a6268;
+        }
+
+        .download-selected-btn {
+            background: #198754; /* A distinct green for bulk action */
+        }
+        .download-selected-btn:hover {
+            background: #157347;
         }
 
         .filters-section {
@@ -138,6 +149,11 @@
             color: #333;
             font-weight: 700;
         }
+        
+        .results-table th:first-child, .results-table td:first-child {
+            text-align: center;
+            width: 40px; /* Give checkbox column a fixed width */
+        }
 
         .results-table tbody tr:hover {
             background-color: #f1f3f5;
@@ -187,6 +203,12 @@
         }
         .download-pdf-btn:hover {
             background-color: #5a32a3;
+        }
+
+        .report-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
         
         /* Modal Styles */
@@ -258,6 +280,9 @@
             <button class="toggle-filters-btn" onclick="toggleFilters()">
                 <i class="fas fa-filter"></i> Hide Filters
             </button>
+            <button id="downloadSelectedBtn" class="download-selected-btn" onclick="downloadSelectedReportsAsPdf()">
+                <i class="fas fa-file-pdf"></i> Download Selected as PDF
+            </button>
         </div>
 
         <div id="filtersSection" class="filters-section">
@@ -296,6 +321,7 @@
         <table class="results-table">
             <thead>
                 <tr>
+                    <th><input type="checkbox" id="selectAllCheckbox"></th>
                     <th>Date</th>
                     <th>Vessel</th>
                     <th>Voyage</th>
@@ -329,7 +355,29 @@
 
     <script>
         // Load reports when page is ready
-        document.addEventListener('DOMContentLoaded', loadReportsFromStorage);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReportsFromStorage();
+            setupCheckboxListeners();
+        });
+
+        function setupCheckboxListeners() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const reportCheckboxes = document.querySelectorAll('.report-checkbox');
+
+            selectAllCheckbox.addEventListener('change', function() {
+                reportCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+
+            reportCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const allChecked = Array.from(reportCheckboxes).every(cb => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = !allChecked && Array.from(reportCheckboxes).some(cb => cb.checked);
+                });
+            });
+        }
 
         function loadReportsFromStorage() {
             const reports = JSON.parse(localStorage.getItem('timeReports')) || [];
@@ -337,13 +385,14 @@
             tableBody.innerHTML = ''; // Clear existing rows
 
             if (reports.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No reports found.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No reports found.</td></tr>';
                 return;
             }
 
             reports.forEach(report => {
                 const row = tableBody.insertRow();
                 row.innerHTML = `
+                    <td><input type="checkbox" class="report-checkbox" data-report-id="${report.id}"></td>
                     <td>${report.date}</td>
                     <td>${report.mv}</td>
                     <td>${report.voy}</td>
@@ -389,7 +438,8 @@
                 let reports = JSON.parse(localStorage.getItem('timeReports')) || [];
                 reports = reports.filter(r => r.id !== reportId);
                 localStorage.setItem('timeReports', JSON.stringify(reports));
-                loadReportsFromStorage(); // Refresh the table
+                loadReportsFromStorage(); // Refresh the table and re-attach listeners
+                setupCheckboxListeners();
             }
         }
 
@@ -429,20 +479,23 @@
             });
         });
 
-        // --- NEW PDF DOWNLOAD FUNCTION ---
-        function downloadReportAsPdf(reportId) {
-            const reports = JSON.parse(localStorage.getItem('timeReports')) || [];
-            const report = reports.find(r => r.id === reportId);
-
-            if (!report) {
-                alert("Report not found!");
+        // --- NEW MULTI-PDF DOWNLOAD FUNCTION ---
+        function downloadSelectedReportsAsPdf() {
+            const selectedCheckboxes = document.querySelectorAll('.report-checkbox:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                alert('Please select at least one report to download.');
                 return;
             }
+
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.reportId);
+            const allReports = JSON.parse(localStorage.getItem('timeReports')) || [];
+            const reportsToDownload = allReports.filter(report => selectedIds.includes(report.id));
 
             const loadingIndicator = document.getElementById('loadingIndicator');
             loadingIndicator.style.display = 'block';
 
-            // Create a hidden container to render the report
+            // Create a hidden container to render the reports
             const pdfContainer = document.createElement('div');
             pdfContainer.id = 'pdfContainer';
             pdfContainer.style.position = 'absolute';
@@ -455,8 +508,16 @@
             
             document.body.appendChild(pdfContainer);
 
-            // Build the report HTML inside the container
-            pdfContainer.innerHTML = buildReportHtml(report);
+            let allReportsHtml = '';
+            reportsToDownload.forEach((report, index) => {
+                allReportsHtml += buildReportHtml(report);
+                // Add a page break after each report except the last one
+                if (index < reportsToDownload.length - 1) {
+                    allReportsHtml += '<div style="page-break-after: always;"></div>';
+                }
+            });
+
+            pdfContainer.innerHTML = allReportsHtml;
 
             // Use a timeout to ensure the content is rendered before capturing
             setTimeout(() => {
@@ -487,7 +548,7 @@
                         position -= pageHeight;
                     }
 
-                    pdf.save(`time_report_${report.date}_${report.mv}.pdf`);
+                    pdf.save(`selected_reports_${new Date().toISOString().slice(0, 10)}.pdf`);
                     
                     // Clean up
                     document.body.removeChild(pdfContainer);
@@ -499,7 +560,7 @@
         function buildReportHtml(report) {
             const team = report.team || { foreman: [], tallyman: [], docker: [] };
             const timeRecords = report.timeRecords || [];
-            const equipment = report.equipment || []; // Now this will have data
+            const equipment = report.equipment || [];
 
             let timeRowsHtml = '';
             timeRecords.forEach(rec => {
