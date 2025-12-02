@@ -160,9 +160,7 @@
         }
 
         .actions-cell {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            padding: 12px; /* Give more space for dropdown */
         }
 
         .action-btn {
@@ -211,6 +209,72 @@
             cursor: pointer;
         }
         
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-toggle {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dropdown-toggle:hover {
+            background-color: #5a6268;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: #f8f9fa;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            right: 0;
+            top: 100%; /* Position below the button */
+        }
+
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            color: black;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+        }
+
+        .dropdown-item i {
+            margin-right: 8px;
+            width: 14px;
+            text-align: center;
+        }
+
+        .dropdown-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .pams-done-status {
+            color: #28a745;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         /* Modal Styles */
         .modal {
             display: none; 
@@ -391,6 +455,27 @@
 
             reports.forEach(report => {
                 const row = tableBody.insertRow();
+                const isPamsDone = report.isPamsDone || false; // Default to false if not present
+
+                // Build Actions cell HTML
+                let actionsHtml = '';
+                if (isPamsDone) {
+                    actionsHtml = `<span class="pams-done-status"><i class="fas fa-check-circle"></i> PAMS Done</span>`;
+                } else {
+                    actionsHtml = `
+                        <div class="dropdown">
+                            <button class="dropdown-toggle">Actions <i class="fas fa-chevron-down"></i></button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="viewReport('${report.id}')"><i class="fas fa-eye"></i> View</a>
+                                <a href="create_report.html?editId=${report.id}" class="dropdown-item"><i class="fas fa-edit"></i> Edit</a>
+                                <button class="dropdown-item" onclick="downloadReportAsPdf('${report.id}')"><i class="fas fa-file-pdf"></i> PDF</button>
+                                <button class="dropdown-item" onclick="markAsPamsDone('${report.id}')"><i class="fas fa-check"></i> PAMS Done</button>
+                                <a href="#" class="dropdown-item" onclick="deleteReport('${report.id}')" style="color:#dc3545;"><i class="fas fa-trash"></i> Delete</a>
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 row.innerHTML = `
                     <td><input type="checkbox" class="report-checkbox" data-report-id="${report.id}"></td>
                     <td>${report.date}</td>
@@ -399,12 +484,7 @@
                     <td>${report.shift}</td>
                     <td>${report.berth}</td>
                     <td>${report.yardno}</td>
-                    <td class="actions-cell">
-                        <button class="action-btn view-btn" onclick="viewReport('${report.id}')">View</button>
-                        <a href="create_report.html?editId=${report.id}" class="action-btn edit-btn">Edit</a>
-                        <button class="action-btn delete-btn" onclick="deleteReport('${report.id}')">Delete</button>
-                        <button class="action-btn download-pdf-btn" onclick="downloadReportAsPdf('${report.id}')"><i class="fas fa-file-pdf"></i> PDF</button>
-                    </td>
+                    <td class="actions-cell">${actionsHtml}</td>
                 `;
             });
         }
@@ -479,7 +559,22 @@
             });
         });
 
-        // --- NEW MULTI-PDF DOWNLOAD FUNCTION ---
+        // --- PAMS DONE FUNCTION ---
+        function markAsPamsDone(reportId) {
+            if (confirm('Mark this report as PAMS Done?')) {
+                let reports = JSON.parse(localStorage.getItem('timeReports')) || [];
+                const reportIndex = reports.findIndex(r => r.id === reportId);
+                
+                if (reportIndex !== -1) {
+                    reports[reportIndex].isPamsDone = true;
+                    localStorage.setItem('timeReports', JSON.stringify(reports));
+                    loadReportsFromStorage(); // Refresh the table
+                    setupCheckboxListeners();
+                }
+            }
+        }
+
+        // --- MULTI-PDF DOWNLOAD FUNCTION (REVISED) ---
         function downloadSelectedReportsAsPdf() {
             const selectedCheckboxes = document.querySelectorAll('.report-checkbox:checked');
             
@@ -495,69 +590,59 @@
             const loadingIndicator = document.getElementById('loadingIndicator');
             loadingIndicator.style.display = 'block';
 
-            // Create a hidden container to render the reports
-            const pdfContainer = document.createElement('div');
-            pdfContainer.id = 'pdfContainer';
-            pdfContainer.style.position = 'absolute';
-            pdfContainer.style.left = '-9999px';
-            pdfContainer.style.top = '0';
-            pdfContainer.style.width = '800px';
-            pdfContainer.style.padding = '10px';
-            pdfContainer.style.backgroundColor = '#fff';
-            pdfContainer.style.fontFamily = 'Roboto, sans-serif';
-            
-            document.body.appendChild(pdfContainer);
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
 
-            let allReportsHtml = '';
+            // Loop through each report to create a separate page
             reportsToDownload.forEach((report, index) => {
-                allReportsHtml += buildReportHtml(report);
-                // Add a page break after each report except the last one
-                if (index < reportsToDownload.length - 1) {
-                    allReportsHtml += '<div style="page-break-after: always;"></div>';
-                }
+                // 1. Build the HTML for the current report
+                const reportHtml = buildSingleReportHtml(report);
+
+                // 2. Create a temporary container to render the HTML
+                const tempContainer = document.createElement('div');
+                tempContainer.style.position = 'absolute';
+                tempContainer.style.left = '-9999px';
+                tempContainer.style.top = '0';
+                tempContainer.style.width = pageWidth + 'px'; // Use page width for consistency
+                tempContainer.style.backgroundColor = '#fff';
+                tempContainer.style.fontFamily = 'Roboto, sans-serif';
+                document.body.appendChild(tempContainer);
+                tempContainer.innerHTML = reportHtml;
+
+                // 3. Use a timeout to ensure the content is rendered before capturing
+                setTimeout(() => {
+                    html2canvas(tempContainer, {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        width: pageWidth, // Set canvas width to page width
+                    }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const imgProps = pdf.getImageProperties(imgData);
+                        const imgWidth = imgProps.width;
+                        const imgHeight = imgProps.height;
+
+                        const ratio = pageWidth / imgWidth;
+                        const scaledHeight = imgHeight * ratio;
+
+                        // Add a new page for each report after the first one
+                        if (index > 0) {
+                            pdf.addPage();
+                        }
+
+                        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, scaledHeight);
+                        
+                        // Clean up the temporary container
+                        document.body.removeChild(tempContainer);
+                    });
+                }, 200); // A small delay for rendering
             });
+        });
 
-            pdfContainer.innerHTML = allReportsHtml;
-
-            // Use a timeout to ensure the content is rendered before capturing
-            setTimeout(() => {
-                html2canvas(pdfContainer, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false
-                }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdf = new jspdf.jsPDF('p', 'pt', 'a4');
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
-
-                    const imgProps = pdf.getImageProperties(imgData);
-                    const imgWidth = imgProps.width;
-                    const imgHeight = imgProps.height;
-
-                    const ratio = pageWidth / imgWidth;
-                    const scaledHeight = imgHeight * ratio;
-
-                    let position = 0;
-                    pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
-                    position -= pageHeight;
-
-                    while (position > -scaledHeight) {
-                        pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', 0, position, pageWidth, scaledHeight);
-                        position -= pageHeight;
-                    }
-
-                    pdf.save(`selected_reports_${new Date().toISOString().slice(0, 10)}.pdf`);
-                    
-                    // Clean up
-                    document.body.removeChild(pdfContainer);
-                    loadingIndicator.style.display = 'none';
-                });
-            }, 500); // 500ms delay for rendering
-        }
-
-        function buildReportHtml(report) {
+        // Function to build HTML for a SINGLE report
+        function buildSingleReportHtml(report) {
             const team = report.team || { foreman: [], tallyman: [], docker: [] };
             const timeRecords = report.timeRecords || [];
             const equipment = report.equipment || [];
