@@ -6,12 +6,9 @@
     <title>TIME REPORT - Advanced Search</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* ... (Keep all existing CSS from previous version) ... */
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
@@ -25,7 +22,7 @@
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px; /* Increased width for new column */
             background: #ffffff;
             padding: 20px;
             border-radius: 8px;
@@ -40,8 +37,14 @@
             border-bottom: 2px solid #e0e0e2;
             padding-bottom: 15px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
+        .header-main {
+            flex-grow: 1;
+        }
+        
         .header h1 {
             margin: 0;
             font-size: 24px;
@@ -51,6 +54,12 @@
         .header .subtitle {
             color: #666;
             font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         .back-link {
@@ -136,6 +145,12 @@
             border-bottom: 1px solid #dee2e6;
         }
         
+        .results-table th:first-child,
+        .results-table td:first-child {
+            text-align: center;
+        }
+
+
         .results-table th {
             background-color: #f4b400;
             color: #333;
@@ -191,26 +206,143 @@
         .pams-done-btn:hover {
             background-color: #218838;
         }
+        
+        /* NEW STYLES FOR MULTI-SELECT */
+        .row-checkbox {
+            transform: scale(1.2);
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        #downloadPdfBtn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #downloadPdfBtn:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        #downloadPdfBtn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #clearSelectionBtn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        #clearSelectionBtn:hover {
+            background-color: #5a6268;
+        }
+        
+        .selection-counter {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        /* MODAL STYLES - RENAMED AND ENHANCED */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); 
+        }
+        .modal-content {
+            position: relative;
+            background-color: #fefefe;
+            margin: 2% auto; 
+            padding: 0;
+            border: 1px solid #888;
+            width: 96%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <div>
+            <div class="header-main">
                 <h1>Advanced Search</h1>
                 <p class="subtitle">Find specific time reports with detailed filters</p>
             </div>
-            <a href="index.html" class="back-link">
-                <i class="fas fa-arrow-left"></i>
-                Back to Home
-            </a>
+            <div class="header-actions">
+                <a href="index.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Home
+                </a>
+                <div class="selection-counter" id="selectionCounter">0 Selected</div>
+                <button id="downloadPdfBtn" onclick="downloadSelectedReportsAsPdf()" disabled>
+                    <i class="fas fa-file-pdf"></i>
+                    Download Selected as PDF
+                </button>
+                <button id="clearSelectionBtn" onclick="clearSelection()">
+                    <i class="fas fa-times"></i>
+                    Clear Selection
+                </button>
+            </div>
         </div>
 
         <div class="search-controls">
             <input type="text" id="mainSearchInput" class="search-input" placeholder="Search by Vessel, Voyage, etc.">
             <button class="toggle-filters-btn" onclick="toggleFilters()">
-                <i class="fas fa-filter"></i> Hide Filters
+                <i class="fas fa-filter"></i>
+                Hide Filters
             </button>
         </div>
 
@@ -244,12 +376,22 @@
                         <option value="FB-200">FB-200</option>
                     </select>
                 </div>
+                <!-- PAMS STATUS FILTER -->
+                <div class="filter-group">
+                    <label for="pamsStatusFilter">PAMS Status</label>
+                    <select id="pamsStatusFilter" name="pamsStatusFilter">
+                        <option value="all">All</option>
+                        <option value="done">Done</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
             </div>
         </div>
 
         <table class="results-table">
             <thead>
                 <tr>
+                    <th><input type="checkbox" id="selectAllCheckbox"></th>
                     <th>Date</th>
                     <th>Vessel</th>
                     <th>Voyage</th>
@@ -266,43 +408,53 @@
         </table>
     </div>
 
+    <!-- VIEW ONLY MODAL -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Report Details</h2>
+                <a href="#" class="close" onclick="closeViewModal()">&times;</a>
+            </div>
+            <div class="modal-body" id="viewModalBody">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        // PASTE YOUR FIREBASE CONFIGURATION HERE
-        const firebaseConfig = {
-            apiKey: "AIzaSy...YOUR_API_KEY...",
-            authDomain: "your-project-id.firebaseapp.com",
-            databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/",
-            projectId: "your-project-id",
-            storageBucket: "your-project-id.appspot.com",
-            messagingSenderId: "...",
-            appId: "1:...:web:..."
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        let allReports = [];
+        let allReports = []; // Store all reports globally
+        let selectedReportIds = new Set(); // Use a Set for efficient add/remove
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadReportsFromFirebase();
+            loadReportsFromStorage();
             // Add event listeners for all filter inputs
             document.getElementById('mainSearchInput').addEventListener('input', applyFilters);
             document.getElementById('startDate').addEventListener('change', applyFilters);
             document.getElementById('endDate').addEventListener('change', applyFilters);
             document.getElementById('yardFilter').addEventListener('change', applyFilters);
             document.getElementById('berthFilter').addEventListener('change', applyFilters);
+            // Event listener for PAMS filter
+            document.getElementById('pamsStatusFilter').addEventListener('change', applyFilters);
+
+            // Add listener for "Select All" checkbox
+            document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.row-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                    if (this.checked) {
+                        selectedReportIds.add(checkbox.dataset.id);
+                    } else {
+                        selectedReportIds.delete(checkbox.dataset.id);
+                    }
+                });
+                updateSelectionCounter();
+            });
         });
 
-        function loadReportsFromFirebase() {
-            const reportsRef = database.ref('reports');
-            reportsRef.on('value', (snapshot) => {
-                allReports = snapshot.val() || [];
-                console.log("Loaded reports from Firebase:", allReports);
-                applyFilters(); // Initial render
-            }, (error) => {
-                console.error("Error loading reports from Firebase:", error);
-            });
+        function loadReportsFromStorage() {
+            allReports = JSON.parse(localStorage.getItem('timeReports')) || [];
+            console.log("Loaded reports from storage:", allReports); // Debugging
+            applyFilters(); // Initial render
         }
 
         function applyFilters() {
@@ -311,19 +463,32 @@
             const endDate = document.getElementById('endDate').value;
             const yardFilter = document.getElementById('yardFilter').value;
             const berthFilter = document.getElementById('berthFilter').value;
+            const pamsStatusFilter = document.getElementById('pamsStatusFilter').value;
 
             const filteredReports = allReports.filter(report => {
+                // --- Text Search Filter ---
                 const matchesSearch = !searchTerm || 
                     report.mv.toLowerCase().includes(searchTerm) ||
                     report.voy.toLowerCase().includes(searchTerm) ||
                     report.date.toLowerCase().includes(searchTerm);
 
+                // --- Date Filters ---
                 const matchesStartDate = !startDate || report.date >= startDate;
                 const matchesEndDate = !endDate || report.date <= endDate;
+
+                // --- Dropdown Filters ---
                 const matchesYard = !yardFilter || report.yardno === yardFilter;
                 const matchesBerth = !berthFilter || report.berth === berthFilter;
 
-                return matchesSearch && matchesStartDate && matchesEndDate && matchesYard && matchesBerth;
+                // --- PAMS Status Filter ---
+                let matchesPamsStatus = true;
+                if (pamsStatusFilter === 'done') {
+                    matchesPamsStatus = report.pamsDone === true;
+                } else if (pamsStatusFilter === 'pending') {
+                    matchesPamsStatus = report.pamsDone !== true;
+                }
+
+                return matchesSearch && matchesStartDate && matchesEndDate && matchesYard && matchesBerth && matchesPamsStatus;
             });
 
             renderReportsTable(filteredReports);
@@ -334,7 +499,8 @@
             tableBody.innerHTML = ''; // Clear existing rows
 
             if (reports.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No reports found matching your criteria.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="11" style="text-align:center;">No reports found matching your criteria.</td></tr>';
+                updateSelectionCounter(); // Reset counter
                 return;
             }
 
@@ -342,8 +508,10 @@
                 const row = tableBody.insertRow();
                 const pamsStatusText = report.pamsDone ? 'Done' : 'Pending';
                 const pamsStatusColor = report.pamsDone ? 'green' : 'orange';
+                const isSelected = selectedReportIds.has(report.id);
 
                 row.innerHTML = `
+                    <td><input type="checkbox" class="row-checkbox" data-id="${report.id}" ${isSelected ? 'checked' : ''}></td>
                     <td>${report.date}</td>
                     <td>${report.mv}</td>
                     <td>${report.voy}</td>
@@ -352,7 +520,7 @@
                     <td>${report.yardno}</td>
                     <td style="color: ${pamsStatusColor}; font-weight: bold; text-align: center;">${pamsStatusText}</td>
                     <td class="actions-cell">
-                        <button class="action-btn view-btn" onclick="viewReportModal('${report.id}')">View</button>
+                        <button class="action-btn view-btn" onclick="openViewModal('${report.id}')">View</button>
                         <a href="create_report.html?editId=${report.id}" class="action-btn edit-btn">Edit</a>
                         <button class="action-btn delete-btn" onclick="deleteReport('${report.id}')">Delete</button>
                         ${!report.pamsDone ? `<button class="action-btn pams-done-btn" onclick="markPamsDone('${report.id}')">PAMS Done</button>` : ''}
@@ -361,51 +529,53 @@
             });
         }
 
-        function viewReportModal(reportId) {
+        function openViewModal(reportId) {
             const report = allReports.find(r => r.id === reportId);
-            
-            if (report) {
-                const modal = document.getElementById('viewModal');
-                const modalBody = document.getElementById('modalBodyContent');
-                
-                modalBody.innerHTML = `
-                    <p><strong>Vessel:</strong> ${report.mv}</p>
-                    <p><strong>Voyage:</strong> ${report.voy}</p>
-                    <p><strong>Date:</strong> ${report.date}</p>
-                    <p><strong>Shift:</strong> ${report.shift}</p>
-                    <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
-                    <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
-                    <hr>
-                    <h4>Team:</h4>
-                    <p><strong>Foreman:</strong> ${report.team ? report.team.foreman.join(', ') : 'N/A'}</p>
-                    <p><strong>Tallyman:</strong> ${report.team ? report.team.tallyman.join(', ') : 'N/A'}</p>
-                    <p><strong>Docker:</strong> ${report.team ? report.team.docker.join(', ') : 'N/A'}</p>
-                `;
-                modal.style.display = "block";
+            if (!report) {
+                alert('Report not found!');
+                return;
             }
+            
+            const modalBody = document.getElementById('viewModalBody');
+            modalBody.innerHTML = `
+                <p><strong>Vessel:</strong> ${report.mv}</p>
+                <p><strong>Voyage:</strong> ${report.voy}</p>
+                <p><strong>Date:</strong> ${report.date}</p>
+                <p><strong>Shift:</strong> ${report.shift}</p>
+                <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
+                <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
+                <hr>
+                <h4>Team:</h4>
+                <p><strong>Foreman:</strong> ${report.team ? report.team.foreman.join(', ') : 'N/A'}</p>
+                <p><strong>Tallyman:</strong> ${report.team ? report.team.tallyman.join(', ') : 'N/A'}</p>
+                <p><strong>Docker:</strong> ${report.team ? report.team.docker.join(', ') : 'N/A'}</p>
+            `;
+            document.getElementById('viewModal').style.display = "block";
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewModal').style.display = "none";
         }
 
         function deleteReport(reportId) {
             if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
-                database.ref('reports/' + reportId).remove()
-                    .then(() => {
-                        console.log("Report deleted successfully");
-                    })
-                    .catch((error) => {
-                        console.error("Error deleting report:", error);
-                    });
+                allReports = allReports.filter(r => r.id !== reportId);
+                // Also remove from selection if it was selected
+                selectedReportIds.delete(reportId);
+                localStorage.setItem('timeReports', JSON.stringify(allReports));
+                applyFilters(); // Refresh table with the new list
+                updateSelectionCounter();
             }
         }
         
         function markPamsDone(reportId) {
             if (confirm('Mark this report as PAMS Done?')) {
-                database.ref('reports/' + reportId).update({ pamsDone: true })
-                    .then(() => {
-                        console.log("Report marked as PAMS Done successfully");
-                    })
-                    .catch((error) => {
-                        console.error("Error updating report:", error);
-                    });
+                const reportIndex = allReports.findIndex(r => r.id === reportId);
+                if (reportIndex !== -1) {
+                    allReports[reportIndex].pamsDone = true;
+                    localStorage.setItem('timeReports', JSON.stringify(allReports));
+                    applyFilters(); // Re-render the table
+                }
             }
         }
 
@@ -421,12 +591,104 @@
                 button.innerHTML = '<i class="fas fa-filter"></i> Show Filters';
             }
         }
+
+        function updateSelectionCounter() {
+            const counter = document.getElementById('selectionCounter');
+            const count = selectedReportIds.size;
+            counter.textContent = `${count} Selected`;
+        }
+
+        function clearSelection() {
+            selectedReportIds.clear();
+            document.getElementById('selectAllCheckbox').checked = false;
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+            updateSelectionCounter();
+        }
+        
+        // --- NEW: FUNCTION TO DOWNLOAD MULTIPLE REPORTS AS PDF ---
+        async function downloadSelectedReportsAsPdf() {
+            if (selectedReportIds.size === 0) {
+                alert('Please select at least one report to download.');
+                return;
+            }
+
+            const reportsToDownload = allReports.filter(report => selectedReportIds.has(report.id));
+            
+            // Create a temporary container to hold all reports for rendering
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px'; // Move off-screen
+            tempContainer.style.width = '210mm'; // A4 width
+            tempContainer.style.padding = '20px';
+            tempContainer.style.fontFamily = 'Roboto, sans-serif';
+            tempContainer.style.fontSize = '12px';
+            tempContainer.style.backgroundColor = '#ffffff';
+
+            reportsToDownload.forEach((report, index) => {
+                // Create a div for each report to act as a page
+                const reportDiv = document.createElement('div');
+                reportDiv.style.marginBottom = '20px';
+                reportDiv.innerHTML = `
+                    <h3 style="page-break-before: always; margin-top: 20px;">Report #${index + 1}</h3>
+                    <p><strong>Vessel:</strong> ${report.mv}</p>
+                    <p><strong>Voyage:</strong> ${report.voy}</p>
+                    <p><strong>Date:</strong> ${report.date}</p>
+                    <p><strong>Shift:</strong> ${report.shift}</p>
+                    <p><strong>What We Do:</strong> ${report.what_we_do || 'N/A'}</p>
+                    <p><strong>PAMS Status:</strong> <span style="color: ${report.pamsDone ? 'green' : 'orange'}; font-weight: bold;">${report.pamsDone ? 'Done' : 'Pending'}</span></p>
+                    <hr>
+                    <h4>Team:</h4>
+                    <p><strong>Foreman:</strong> ${report.team ? report.team.foreman.join(', ') : 'N/A'}</p>
+                    <p><strong>Tallyman:</strong> ${report.team ? report.team.tallyman.join(', ') : 'N/A'}</p>
+                    <p><strong>Docker:</strong> ${report.team ? report.team.docker.join(', ') : 'N/A'}</p>
+                `;
+                tempContainer.appendChild(reportDiv);
+            });
+            
+            document.body.appendChild(tempContainer);
+
+            try {
+                const canvas = await html2canvas(tempContainer, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    width: tempContainer.scrollWidth,
+                    height: tempContainer.scrollHeight
+                });
+                const imgData = canvas.toDataURL('image/png');
+                
+                const pdf = new jspdf.jsPDF('p', 'mm', 'a4'); // Use mm and A4 size
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                const ratio = pdfWidth / imgProps.width;
+                const scaledHeight = imgProps.height * ratio;
+                
+                let yPosition = 0;
+                while (yPosition < scaledHeight) {
+                    pdf.addImage(imgData, 'PNG', 0, yPosition, pdfWidth, scaledHeight);
+                    yPosition += scaledHeight;
+                }
+
+                pdf.save('selected_reports_' + new Date().toISOString().slice(0, 10) + '.pdf');
+                
+                // Clean up
+                document.body.removeChild(tempContainer);
+                clearSelection(); // Clear selection after successful download
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('An error occurred while generating the PDF. Please try again.');
+                document.body.removeChild(tempContainer); // Ensure cleanup even on error
+            }
+        }
         
         // Modal Close Logic
         window.onclick = function(event) {
-            const modal = document.getElementById('viewModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
+            const viewModal = document.getElementById('viewModal');
+            if (event.target == viewModal) {
+                closeViewModal();
             }
         }
     </script>
