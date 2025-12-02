@@ -596,7 +596,7 @@
                 Back to Home
             </a>
         </div>
-        <!-- Added ID to the form for JS selection -->
+        <!-- Added ID to form for JS selection -->
         <form id="reportForm">
             <table> <!--table 1-->
                 <tr>
@@ -1023,7 +1023,7 @@
 
             // Populate dynamic tables (this is complex, simplified for this example)
             // A full implementation would clear existing rows and recreate them from saved data.
-            // For now, we'll just populate the first row if data exists.
+            // For now, we'll just populate first row if data exists.
             if(report.timeRecords && report.timeRecords.length > 0) {
                 const firstTimeRow = report.timeRecords[0];
                 const timeTableBody = document.getElementById('timeTable').rows[0];
@@ -1041,11 +1041,29 @@
                 populateTeamMembers('tallyman', report.team.tallyman);
                 populateTeamMembers('docker', report.team.docker);
             }
+            
+            // Populate equipment
+            if(report.equipment && report.equipment.length > 0) {
+                const equipmentTableBody = document.querySelector("#equipmentTable tbody");
+                // Clear existing rows first
+                equipmentTableBody.innerHTML = ''; 
+                // Add rows from saved data
+                report.equipment.forEach(eq => {
+                    const newRow = equipmentTableBody.insertRow();
+                    newRow.innerHTML = `
+                        <td><input list="Equipment" name="Equipment" value="${eq.Equipment || ''}"></td>
+                        <td><input list="operator1" name="operator1" value="${eq.operator1 || ''}"></td>
+                        <td><input type="time" name="start1" value="${eq.start1 || ''}"></td>
+                        <td><input type="time" name="end1" value="${eq.end1 || ''}"></td>
+                        <td><button type="button" class="equipment-delete-btn" onclick="deleteEquipmentRow(this)">Delete</button></td>
+                    `;
+                });
+            }
         }
         
         function populateTeamMembers(type, members) {
             const container = document.getElementById(`${type}Inputs`);
-            // Clear existing inputs (except the first one and the add button)
+            // Clear existing inputs (except first one and add button)
             while(container.children.length > 2) {
                 container.removeChild(container.firstChild);
             }
@@ -1085,6 +1103,18 @@
                 });
             });
 
+            // --- FIX: Collect equipment data ---
+            const equipment = [];
+            const equipmentRows = document.querySelectorAll('#equipmentTable tbody tr');
+            equipmentRows.forEach(row => {
+                equipment.push({
+                    Equipment: row.querySelector('input[name="Equipment"]').value,
+                    operator1: row.querySelector('input[name="operator1"]').value,
+                    start1: row.querySelector('input[name="start1"]').value,
+                    end1: row.querySelector('input[name="end1"]').value
+                });
+            });
+
             return {
                 mv: document.getElementById('mv').value,
                 voy: document.getElementById('voy').value,
@@ -1096,7 +1126,7 @@
                 what_we_do: document.getElementById('activityTextarea').value,
                 team: team,
                 timeRecords: timeRecords,
-                // Add equipment collection here if needed
+                equipment: equipment // <-- Add equipment here
             };
         }
 
@@ -1205,7 +1235,7 @@
         function addTeamMember(teamType) {
             const container = document.getElementById(`${teamType}Inputs`);
             
-            // Create a wrapper div for the input and delete button
+            // Create a wrapper div for input and delete button
             const memberDiv = document.createElement("div");
             
             const input = document.createElement("input");
@@ -1227,7 +1257,7 @@
             memberDiv.appendChild(input);
             memberDiv.appendChild(deleteBtn);
             
-            // Insert the new member div before the add button
+            // Insert new member div before the add button
             container.insertBefore(memberDiv, container.lastElementChild);
             
             // Focus on the new input field

@@ -499,7 +499,7 @@
         function buildReportHtml(report) {
             const team = report.team || { foreman: [], tallyman: [], docker: [] };
             const timeRecords = report.timeRecords || [];
-            const equipment = report.equipment || []; // Assuming equipment data is stored
+            const equipment = report.equipment || []; // Now this will have data
 
             let timeRowsHtml = '';
             timeRecords.forEach(rec => {
