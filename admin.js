@@ -308,6 +308,24 @@ function reportDialog(r) {
 /* =====================================================================
    USERS
    ===================================================================== */
+const PERMS = [
+  ['new_report', 'Create time reports', 'New Report button'],
+  ['new_discharge', 'Create discharge lists', 'Discharge List button'],
+  ['search', 'Open the search page', 'Browse and view saved reports'],
+  ['edit', 'Edit saved reports', 'Change a report after it is saved'],
+  ['pams', 'Mark PAMS done', 'Toggle the PAMS Done button'],
+  ['delete', 'Delete reports', 'Remove reports from the search page'],
+  ['export', 'Download combined PDF', 'Select several reports and export one PDF'],
+];
+const SHORT = { new_report: 'New report', new_discharge: 'New discharge', search: 'Search', edit: 'Edit', pams: 'PAMS', delete: 'Delete', export: 'PDF' };
+const PRESETS = {
+  viewer:   { new_report: false, new_discharge: false, search: true, edit: false, pams: false, delete: false, export: true },
+  standard: { new_report: true, new_discharge: true, search: true, edit: true, pams: true, delete: false, export: true },
+  full:     { new_report: true, new_discharge: true, search: true, edit: true, pams: true, delete: true, export: true },
+};
+const permChips = u => u.role === 'admin' ? '<span class="badge admin">Everything</span>'
+  : PERMS.map(([k]) => `<span class="pm ${u.perms && u.perms[k] ? 'on' : 'off'}">${SHORT[k]}</span>`).join('');
+
 let USERS = [];
 async function usersView() {
   const V = document.getElementById('view');
@@ -318,9 +336,9 @@ async function usersView() {
   V.innerHTML = `
     <div class="toolbar"><strong>${USERS.length} users</strong><span class="range-note"></span>
       <button class="btn primary" id="add" style="margin-left:auto">+ Add user</button></div>
-    <div class="card"><div class="tbl-wrap"><table><thead><tr><th>User</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody>
+    <div class="card"><div class="tbl-wrap"><table><thead><tr><th>User</th><th>Name</th><th>Role</th><th>Permissions</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody>
     ${USERS.map(u => `<tr><td><b>${esc(u.username)}</b>${u.id === ME.id ? ' <span class="badge on">You</span>' : ''}</td><td>${esc(u.full_name) || '-'}</td>
-      <td><span class="badge ${u.role}">${u.role}</span></td><td><span class="badge ${u.active ? 'on' : 'off'}">${u.active ? 'Active' : 'Disabled'}</span></td>
+      <td><span class="badge ${u.role}">${u.role}</span></td><td class="perms">${permChips(u)}</td><td><span class="badge ${u.active ? 'on' : 'off'}">${u.active ? 'Active' : 'Disabled'}</span></td>
       <td>${dt(u.last_login)}</td>
       <td><div class="acts"><button class="btn sm" data-edit="${u.id}">Edit</button>
         <button class="btn sm" data-toggle="${u.id}">${u.active ? 'Disable' : 'Enable'}</button>
@@ -339,8 +357,8 @@ async function usersView() {
   });
 }
 
-const saveUser = (id, username, pass, name, role, active) =>
-  sbRpc('admin_save_user', { p_id: id, p_username: username, p_pass: pass || null, p_name: name || '', p_role: role, p_active: active });
+const saveUser = (id, username, pass, name, role, active, perms) =>
+  sbRpc('admin_save_user', { p_id: id, p_username: username, p_pass: pass || null, p_name: name || '', p_role: role, p_active: active, p_perms: perms ?? null });
 
 function genPass() {
   const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', a = new Uint32Array(10);
@@ -349,11 +367,16 @@ function genPass() {
 
 function userDialog(u) {
   const d = document.getElementById('ud'), isNew = !u;
+  const cur = u ? (u.perms || PRESETS.standard) : PRESETS.standard;
   d.innerHTML = `<form class="dlg" id="uf" autocomplete="off">
     <h3>${isNew ? 'Add user' : 'Edit user'}</h3>
     <label for="uu">Username</label><input type="text" id="uu" value="${esc(u?.username)}" required>
     <label for="un">Full name</label><input type="text" id="un" value="${esc(u?.full_name)}">
-    <label for="ur">Role</label><select id="ur"><option value="user">User - reports only</option><option value="admin">Admin - reports + admin page</option></select>
+    <label for="ur">Role</label><select id="ur"><option value="user">User - uses the Time Report app</option><option value="admin">Admin - everything + this admin site</option></select>
+    <label>Permissions</label>
+    <div class="presets"><button type="button" class="btn sm" data-pre="viewer">Viewer</button><button type="button" class="btn sm" data-pre="standard">Standard</button><button type="button" class="btn sm" data-pre="full">Full</button></div>
+    <div class="perm-list" id="pl">${PERMS.map(([k, l, dsc]) => `<label class="chk"><input type="checkbox" data-perm="${k}" ${cur[k] ? 'checked' : ''}><span>${l}<small>${dsc}</small></span></label>`).join('')}</div>
+    <div class="hint" id="pn"></div>
     <label for="up">${isNew ? 'Password' : 'New password'}</label>
     <div class="pw-row"><input type="text" id="up" autocomplete="new-password" placeholder="${isNew ? 'At least 4 characters' : 'Leave empty to keep the current one'}"><button type="button" class="btn" id="gp">Generate</button></div>
     <div class="hint">${isNew ? 'Give this password to the user.' : 'Changing it signs that user out on all devices.'}</div>
@@ -361,6 +384,16 @@ function userDialog(u) {
     <div class="err" id="ue" role="alert"></div>
     <div class="foot"><button type="button" class="btn" id="uc">Cancel</button><button class="btn primary" id="us">Save</button></div></form>`;
   document.getElementById('ur').value = u?.role || 'user';
+  const boxes = () => [...document.querySelectorAll('[data-perm]')];
+  const syncRole = () => {
+    const adm = document.getElementById('ur').value === 'admin';
+    boxes().forEach(c => { c.disabled = adm; if (adm) c.checked = true; });
+    document.querySelectorAll('[data-pre]').forEach(b => b.disabled = adm);
+    document.getElementById('pn').textContent = adm ? 'Admins always have every permission.' : 'Changes apply the next time the user opens the app.';
+  };
+  document.getElementById('ur').onchange = syncRole;
+  document.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => boxes().forEach(c => { c.checked = !!PRESETS[b.dataset.pre][c.dataset.perm]; }));
+  syncRole();
   document.getElementById('gp').onclick = () => { document.getElementById('up').value = genPass(); };
   document.getElementById('uc').onclick = () => d.close();
   document.getElementById('uf').onsubmit = async e => {
@@ -368,7 +401,8 @@ function userDialog(u) {
     const b = document.getElementById('us'); b.disabled = true; document.getElementById('ue').textContent = '';
     try {
       await saveUser(u ? u.id : null, document.getElementById('uu').value, document.getElementById('up').value,
-        document.getElementById('un').value, document.getElementById('ur').value, document.getElementById('ua').checked);
+        document.getElementById('un').value, document.getElementById('ur').value, document.getElementById('ua').checked,
+        Object.fromEntries(boxes().map(c => [c.dataset.perm, c.checked])));
       d.close(); toast(isNew ? 'User added' : 'User updated'); usersView();
     } catch (x) { document.getElementById('ue').textContent = x.message; b.disabled = false; }
   };

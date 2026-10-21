@@ -149,3 +149,17 @@ table.mini th{padding:7px 10px}table.mini td{padding:7px 10px}
 .mpl span{display:inline-block;border:1px solid #d1d5db;border-radius:4px;padding:1px 8px;margin:2px;background:#fff}
 .none{color:var(--muted);font-size:13px}
 @media (max-width:560px){.facts,.mpl{grid-template-columns:1fr 1fr}}
+
+/* ---------- permissions ---------- */
+td.perms{white-space:normal;max-width:380px;line-height:1.9}
+.pm{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:600;margin:0 3px 0 0}
+.pm.on{background:#dcfce7;color:#15803d}
+.pm.off{background:#f3f4f6;color:#9ca3af;text-decoration:line-through}
+.presets{display:flex;gap:6px;margin-bottom:8px}
+.perm-list{border:1px solid var(--line);border-radius:10px;padding:4px 12px}
+.dlg .perm-list label.chk{display:flex;align-items:flex-start;gap:10px;margin:0;padding:9px 0;font-size:13px;font-weight:600;border-bottom:1px solid #f1f3f5}
+.dlg .perm-list label.chk:last-child{border-bottom:0}
+.perm-list small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:1px}
+.perm-list input{margin-top:3px;width:16px;height:16px;accent-color:var(--orange)}
+dialog#ud{max-height:94vh}
+dialog#ud .dlg{max-height:94vh;overflow:auto}
