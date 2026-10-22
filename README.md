@@ -1,13 +1,26 @@
-# Time Report Admin (standalone site)
+# نظام مناوبات الحافلات المدرسية – مدرسة فدى للتعليم الأساسي
 
-Separate website for managers: own address, own sign-in, dashboard + user management.
-It reads the same Supabase database as the Time Report app (config.js).
+## الملفات
+```
+fida-bus/
+├── index.html          الصفحة العامة (مناوبة اليوم، جدول الأسبوع، دليل السائقين)
+├── admin.html          لوحة التحكم (محمية برمز سري)
+└── assets/
+    ├── css/style.css   التصميم والثيم (فاتح وليلي)
+    ├── js/data.js      حفظ البيانات والأدوات المشتركة
+    ├── js/public.js    برمجة الصفحة العامة
+    ├── js/admin.js     برمجة لوحة التحكم
+    └── img/logo.jpg    شعار المدرسة
+```
 
-## Setup
-1. Supabase → SQL Editor → run `admin.sql` (after `users.sql` from the main project).
-2. New GitHub repository (e.g. TimeReport_Admin) → upload the files in this folder → Settings → Pages → Deploy from branch `main` / root.
-3. Open the new site address and sign in with an account whose role is `admin`.
+## التشغيل
+- افتح `index.html` في المتصفح (Chrome أو Edge). لوحة التحكم من زر "لوحة التحكم".
+- الرمز السري الافتراضي: **1234**. غيّره من الإعدادات أول مرة.
 
-## Files
-index.html, admin.css, admin.js, api.js, config.js  (the site)
-admin.sql  (run once in Supabase, not uploaded to the site)
+## مهم عن البيانات
+البيانات تُحفظ داخل متصفح الجهاز الذي تستخدمه. لنقلها لجهاز آخر:
+الإعدادات ← حفظ نسخة احتياطية، ثم على الجهاز الآخر: الإعدادات ← استيراد نسخة.
+
+## النشر على الإنترنت مجاناً
+ارفع المجلد كاملاً على GitHub Pages أو Netlify (اسحب المجلد إلى app.netlify.com/drop).
+ملاحظة: بعد النشر، كل جهاز يحتفظ ببياناته الخاصة. لمشاركة بيانات واحدة بين كل الأجهزة يلزم ربط قاعدة بيانات (مثل Firebase).
