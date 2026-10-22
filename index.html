@@ -1,70 +1,18 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>مناوبات الحافلات – مدرسة فدى</title>
-<link rel="icon" href="assets/img/logo.jpg">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Report Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
 </head>
 <body>
-<header class="pub-head">
-  <div class="in">
-    <div class="logo-disc"><img src="assets/img/logo.jpg" alt="شعار مدرسة فدى للتعليم الأساسي"></div>
-    <div>
-      <h1>نظام مناوبات الحافلات المدرسية</h1>
-      <div class="sub" id="schoolName">مدرسة فدى للتعليم الأساسي</div>
-    </div>
-    <div class="tools">
-      <button class="btn icon" id="themeBtn" title="تبديل الوضع الليلي" aria-label="تبديل الوضع الليلي"><i class="fa-solid fa-circle-half-stroke"></i></button>
-      <a class="btn primary" href="admin.html"><i class="fa-solid fa-gauge-high"></i> لوحة التحكم</a>
-    </div>
-  </div>
-</header>
-<div class="road" aria-hidden="true"></div>
-
-<main class="page">
-  <section>
-    <div class="sec-title">
-      <h2>مناوبة اليوم</h2>
-      <span class="muted" id="todayLabel"></span>
-    </div>
-    <div class="today-grid" id="todayGrid"></div>
-  </section>
-
-  <section>
-    <div class="sec-title">
-      <h2>جدول الأسبوع</h2>
-      <span class="muted" id="weekLabel"></span>
-      <div class="week-nav">
-        <button class="btn sm" id="prevWeek"><i class="fa-solid fa-chevron-right"></i> السابق</button>
-        <button class="btn sm" id="thisWeek">هذا الأسبوع</button>
-        <button class="btn sm" id="nextWeek">التالي <i class="fa-solid fa-chevron-left"></i></button>
-      </div>
-    </div>
-    <div class="card table-wrap">
-      <table class="data">
-        <thead><tr><th>اليوم</th><th>التاريخ</th><th>مناوبة الذهاب</th><th>الوجهة</th><th>المناوبة في المدرسة</th></tr></thead>
-        <tbody id="weekBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section>
-    <div class="sec-title">
-      <h2>دليل السائقين</h2>
-      <span class="muted" id="dirCount"></span>
-      <input class="input" id="dirSearch" placeholder="ابحث بالاسم أو المنطقة أو رقم الحافلة" style="max-width:320px;margin-inline-start:auto" aria-label="بحث في السائقين">
-    </div>
-    <div class="dir-grid" id="dirGrid"></div>
-  </section>
-</main>
-<footer class="pub-foot">نظام إدارة مناوبات الحافلات – <span id="footSchool">مدرسة فدى للتعليم الأساسي</span> © <span id="year"></span></footer>
-
-<script src="assets/js/data.js"></script>
-<script src="assets/js/public.js"></script>
+<div id="app"><p class="loading">Loading…</p></div>
+<div id="toast" role="status"></div>
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>
