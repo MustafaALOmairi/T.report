@@ -149,7 +149,7 @@ async function dashboard() {
   try {
     const f = `report_date=gte.${P.from}&report_date=lte.${P.to}`;
     const [rows, dis] = await Promise.all([
-      fetchAll('time_reports', 'id,mv,voy,report_date,shift,berth,bollard,yard_no,what_we_do,pams_done,activities,equipment,manpower', f),
+      fetchAll('time_reports', 'id,mv,voy,report_type,report_date,shift,berth,bollard,yard_no,what_we_do,pams_done,activities,equipment,manpower', f),
       fetchAll('discharge_lists', 'id', `list_date=gte.${P.from}&list_date=lte.${P.to}`),
     ]);
     document.getElementById('rn').textContent = `${fmtD(P.from)} → ${fmtD(P.to)}`;
@@ -161,10 +161,12 @@ async function dashboard() {
   }
 }
 
+const rtClean = v => String(v || '').replace(/^\s*\d+\s*-\s*/, ''); // drop old number prefix, e.g. '1-ESR' -> 'ESR'
+
 function aggregate(rows) {
   const a = {
     n: rows.length, workMin: 0, eqMin: 0, vessels: new Set(), pending: [],
-    byDay: new Map(), shift: new Map(), berth: new Map(), yard: new Map(), vessel: new Map(), eq: new Map(), op: new Map(),
+    byDay: new Map(), shift: new Map(), rtype: new Map(), berth: new Map(), yard: new Map(), vessel: new Map(), eq: new Map(), op: new Map(),
     mp: { FOREMAN: 0, TALLYMAN: 0, DOCKER: 0 },
   };
   const bump = (m, name, v) => {
@@ -175,6 +177,7 @@ function aggregate(rows) {
   for (const r of rows) {
     a.byDay.set(r.report_date, (a.byDay.get(r.report_date) || 0) + 1);
     a.shift.set(r.shift || 'Not set', (a.shift.get(r.shift || 'Not set') || 0) + 1);
+    bump(a.rtype, rtClean(r.report_type), 1);
     bump(a.berth, r.berth, 1); bump(a.yard, r.yard_no, 1); bump(a.vessel, r.mv, 1);
     if (String(r.mv || '').trim()) a.vessels.add(r.mv.trim().toLowerCase());
     for (const x of (r.activities || [])) a.workMin += spanMin(x.start_time, x.end_time);
@@ -259,6 +262,7 @@ function renderDash(a, discharge) {
     <section class="card"><h3>By shift</h3>${a.n ? `
       <div class="stack" role="img" aria-label="Shift split">${shifts.map(([k, v]) => `<i style="width:${v / sTotal * 100}%;background:${SHIFT_COLORS[k] || '#a78bfa'}" title="${esc(k)}: ${v}"></i>`).join('')}</div>
       <div class="legend">${shifts.map(([k, v]) => `<div><span class="dot" style="background:${SHIFT_COLORS[k] || '#a78bfa'}"></span>${esc(k)}<b>${fmtN(v)} · ${fmtN(100 * v / sTotal)}%</b></div>`).join('')}</div>` : '<div class="empty">No data</div>'}</section>
+    <section class="card span3"><h3>By report type</h3>${hbars(topN(a.rtype, 12))}</section>
     <section class="card"><h3>Top berths</h3>${hbars(topN(a.berth))}</section>
     <section class="card"><h3>Top yards</h3>${hbars(topN(a.yard))}</section>
     <section class="card"><h3>Top vessels (reports)</h3>${hbars(topN(a.vessel))}</section>
@@ -267,8 +271,8 @@ function renderDash(a, discharge) {
     <section class="card"><h3>Manpower (names entered)</h3><div class="mp">
       ${['FOREMAN', 'TALLYMAN', 'DOCKER'].map(k => `<div><b>${fmtN(a.mp[k])}</b><span>${k[0] + k.slice(1).toLowerCase()}</span><small>${a.n ? fmtN(a.mp[k] / a.n, 1) : '0'} per report</small></div>`).join('')}</div></section>
     <section class="card span3"><h3>PAMS pending ${a.pending.length ? `(${fmtN(a.pending.length)})` : ''}</h3>
-      ${a.pending.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Vessel</th><th>Voyage</th><th>Shift</th><th>Berth</th><th>Yard</th><th></th></tr></thead><tbody>
-      ${a.pending.slice(0, 15).map(r => `<tr><td>${fmtD(r.report_date)}</td><td><b>${esc(r.mv)}</b></td><td>${esc(r.voy)}</td><td>${esc(r.shift) || '-'}</td><td>${esc(r.berth) || '-'}</td><td>${esc(r.yard_no) || '-'}</td>
+      ${a.pending.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Vessel</th><th>Voyage</th><th>Type</th><th>Shift</th><th>Berth</th><th>Yard</th><th></th></tr></thead><tbody>
+      ${a.pending.slice(0, 15).map(r => `<tr><td>${fmtD(r.report_date)}</td><td><b>${esc(r.mv)}</b></td><td>${esc(r.voy)}</td><td>${esc(rtClean(r.report_type)) || '-'}</td><td>${esc(r.shift) || '-'}</td><td>${esc(r.berth) || '-'}</td><td>${esc(r.yard_no) || '-'}</td>
       <td><button class="btn sm" data-view="${r.id}">View</button></td></tr>`).join('')}</tbody></table></div>
       ${a.pending.length > 15 ? `<div class="empty">Showing the latest 15 of ${fmtN(a.pending.length)}</div>` : ''}` : '<div class="empty">Nothing pending - all reports are marked PAMS done</div>'}</section>
   </div>`;
@@ -285,7 +289,7 @@ function reportDialog(r) {
   const hh = t => String(t || '').slice(0, 5);
   d.innerHTML = `<div class="dlg wide"><h3>${esc(r.mv) || '(no vessel)'} <small>${esc(r.voy)}</small></h3>
     <div class="facts">
-      <div><span>Date</span>${fmtD(r.report_date)}</div><div><span>Shift</span>${esc(r.shift) || '-'}</div><div><span>Berth</span>${esc(r.berth) || '-'}</div>
+      <div><span>Type</span>${esc(rtClean(r.report_type)) || '-'}</div><div><span>Date</span>${fmtD(r.report_date)}</div><div><span>Shift</span>${esc(r.shift) || '-'}</div><div><span>Berth</span>${esc(r.berth) || '-'}</div>
       <div><span>Bollard</span>${esc(r.bollard) || '-'}</div><div><span>Yard</span>${esc(r.yard_no) || '-'}</div>
       <div><span>PAMS</span>${r.pams_done ? 'Done' : 'Pending'}</div></div>
     <h4>Work activities</h4>${acts.length ? `<div class="tbl-wrap"><table class="mini"><thead><tr><th>Start</th><th>End</th><th>No</th><th>What we use</th></tr></thead><tbody>
