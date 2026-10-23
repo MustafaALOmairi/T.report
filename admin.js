@@ -262,10 +262,10 @@ function renderDash(a, discharge) {
     <section class="card"><h3>By shift</h3>${a.n ? `
       <div class="stack" role="img" aria-label="Shift split">${shifts.map(([k, v]) => `<i style="width:${v / sTotal * 100}%;background:${SHIFT_COLORS[k] || '#a78bfa'}" title="${esc(k)}: ${v}"></i>`).join('')}</div>
       <div class="legend">${shifts.map(([k, v]) => `<div><span class="dot" style="background:${SHIFT_COLORS[k] || '#a78bfa'}"></span>${esc(k)}<b>${fmtN(v)} · ${fmtN(100 * v / sTotal)}%</b></div>`).join('')}</div>` : '<div class="empty">No data</div>'}</section>
-    <section class="card span3"><h3>By report type</h3>${hbars(topN(a.rtype, 12))}</section>
     <section class="card"><h3>Top berths</h3>${hbars(topN(a.berth))}</section>
     <section class="card"><h3>Top yards</h3>${hbars(topN(a.yard))}</section>
     <section class="card"><h3>Top vessels (reports)</h3>${hbars(topN(a.vessel))}</section>
+    <section class="card"><h3>Top report types</h3>${hbars(topN(a.rtype))}</section>
     <section class="card"><h3>Equipment hours</h3>${hbars(topN(a.eq), ' h')}</section>
     <section class="card"><h3>Operator hours</h3>${hbars(topN(a.op), ' h')}</section>
     <section class="card"><h3>Manpower (names entered)</h3><div class="mp">
